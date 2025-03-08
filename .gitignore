@@ -175,3 +175,5 @@ cython_debug/
 
 uv.lock
 scripts/catalog_notebook_output
+.vscode
+notes
