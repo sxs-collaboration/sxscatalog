@@ -174,3 +174,4 @@ cython_debug/
 .pypirc
 
 uv.lock
+scripts/catalog_notebook_output

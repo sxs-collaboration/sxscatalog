@@ -29,13 +29,15 @@ jobs:
             - name: Set up Python
               uses: actions/setup-python@v5
               with:
-                    python-version: '3.13'
+                  python-version: '3.13'
 
             - name: Install dependencies
               run: pip install --upgrade pip hatch
 
             - name: Run tests
-              run: hatch run test
+              run: |
+                hatch run tests:test
+                hatch run marimo:check
 
             - name: Determine bump type
               id: version
