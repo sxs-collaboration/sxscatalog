@@ -1,0 +1,78 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sxscatalog"
+dynamic = ["version"]
+description = 'Interface to the catalog of SXS simulations'
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "Mike Boyle", email = "michael.oliver.boyle@gmail.com" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = []
+
+[project.urls]
+Documentation = "https://github.com/Mike Boyle/sxscatalog#readme"
+Issues = "https://github.com/Mike Boyle/sxscatalog/issues"
+Source = "https://github.com/Mike Boyle/sxscatalog"
+
+[tool.hatch.version]
+path = "src/sxscatalog/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/sxscatalog tests}"
+
+[tool.hatch.envs.marimo]
+extra-dependencies = [
+  "marimo",
+]
+[tool.hatch.envs.marimo.scripts]
+edit = "marimo edit --sandbox scripts/catalog_notebook.py"
+run = "marimo run --sandbox scripts/catalog_notebook.py"
+
+[tool.hatch.envs.tests]
+dependencies = [
+  "pytest",
+  "pytest-cov"
+]
+[tool.hatch.envs.tests.scripts]
+# Run these as `hatch run tests:test`
+test = "pytest {args:tests}"
+
+[tool.coverage.run]
+source_pkgs = ["sxscatalog", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/sxscatalog/__about__.py",
+]
+
+[tool.coverage.paths]
+sxscatalog = ["src/sxscatalog", "*/sxscatalog/src/sxscatalog"]
+tests = ["tests", "*/sxscatalog/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
