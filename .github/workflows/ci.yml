@@ -58,28 +58,55 @@ jobs:
                 NEW_VERSION="$(hatch version)"
                 echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-            - name: Commit version bump
-              run: |
-                git config user.name "github-actions"
-                git config user.email "github-actions@github.com"
-                git add pyproject.toml
-                git commit -m "Bump version to ${{ steps.bump_version.outputs.NEW_VERSION }}"
-                git push
+            # - name: Commit version bump
+            #   run: |
+            #     git config user.name "github-actions"
+            #     git config user.email "github-actions@github.com"
+            #     git add pyproject.toml
+            #     git commit -m "Bump version to ${{ steps.bump_version.outputs.NEW_VERSION }}"
+            #     git push
 
-            - name: Create GitHub Release
-              uses: actions/create-release@v1
+            # - name: Create GitHub Release
+            #   uses: actions/create-release@v1
+            #   with:
+            #     tag_name: v${{ steps.bump_version.outputs.NEW_VERSION }}
+            #     release_name: v${{ steps.bump_version.outputs.NEW_VERSION }}
+            #     draft: false
+            #     prerelease: false
+            #   env:
+            #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Export notebook
+              run: hatch run marimo:convert
+  
+            - name: Upload Pages Artifact
+              uses: actions/upload-pages-artifact@v3
               with:
-                tag_name: v${{ steps.bump_version.outputs.NEW_VERSION }}
-                release_name: v${{ steps.bump_version.outputs.NEW_VERSION }}
-                draft: false
-                prerelease: false
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  path: scripts/catalog_notebook_output
+  
+            # - name: Publish to PyPI
+            #   run: |
+            #     hatch publish
+            #   env:
+            #     HATCH_INDEX_SERVER: pypi
+            #     HATCH_INDEX_USER: ${{ secrets.PYPI_USERNAME }}
+            #     HATCH_INDEX_AUTH: ${{ secrets.PYPI_PASSWORD }}
 
-            - name: Publish to PyPI
-              run: |
-                hatch publish
-              env:
-                HATCH_INDEX_SERVER: pypi
-                HATCH_INDEX_USER: ${{ secrets.PYPI_USERNAME }}
-                HATCH_INDEX_AUTH: ${{ secrets.PYPI_PASSWORD }}
+
+    deploy:
+        needs: test-and-release
+        runs-on: ubuntu-latest
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        
+        permissions:
+            pages: write
+            id-token: write
+        
+        steps:
+            - name: 🌐 Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4
+              with:
+                  artifact_name: github-pages
