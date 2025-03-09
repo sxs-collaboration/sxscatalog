@@ -5,138 +5,132 @@
 name: CI
 
 on:
-    push:
-        branches:
-            - main
-        tags: ['*']
-    pull_request:
+  push:
+    branches:
+      - main
+    tags: ['*']
+  pull_request:
 
 concurrency:
-    group: test-${{ github.head_ref }}
-    cancel-in-progress: true
+  group: test-${{ github.head_ref }}
+  cancel-in-progress: true
 
 env:
-    PYTHONUNBUFFERED: "1"
-    FORCE_COLOR: "1"
+  PYTHONUNBUFFERED: "1"
+  FORCE_COLOR: "1"
 
 jobs:
-    test-and-release:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Check out code
-              uses: actions/checkout@v4
+  test-and-release:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
 
-            - name: Set up Python
-              uses: actions/setup-python@v5
-              with:
-                python-version: '3.13'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
 
-            - name: Install dependencies
-              run: pip install --upgrade pip hatch
+      - name: Install dependencies
+        run: pip install --upgrade pip hatch
 
-            - name: Run tests
-              run: |
-                hatch run tests:test
-                hatch run marimo:check
+      - name: Run tests
+        run: |
+          hatch run tests:test
+          hatch run marimo:check
 
-            - name: Export notebook
-              run: hatch run marimo:convert
+      - name: Export notebook
+        run: hatch run marimo:convert
 
-            - name: Determine bump type
-              id: version
-              run: |
-                OLD_VERSION="$(hatch version)"
-                BUMP_TYPE="patch"
-                if [[ "$OLD_VERSION" == *"a"* ]]; then
-                    BUMP_TYPE="a"
-                elif [[ "$OLD_VERSION" == *"b"* ]]; then
-                    BUMP_TYPE="b"
-                fi
-                COMMIT_MSG="$(git log -1 --pretty=%B)"
-                if [[ "$COMMIT_MSG" == *"#major"* ]]; then
-                    BUMP_TYPE="major"
-                elif [[ "$COMMIT_MSG" == *"#minor"* ]]; then
-                    BUMP_TYPE="minor"
-                elif [[ "$COMMIT_MSG" == *"#patch"* ]]; then
-                    BUMP_TYPE="patch"
-                elif [[ "$COMMIT_MSG" == *"#alpha"* ]]; then
-                    BUMP_TYPE="a"
-                elif [[ "$COMMIT_MSG" == *"#beta"* ]]; then
-                    BUMP_TYPE="b"
-                fi
-                echo "BUMP_TYPE=$BUMP_TYPE" >> $GITHUB_OUTPUT
+      - name: Determine bump type
+        id: version
+        run: |
+          OLD_VERSION="$(hatch version)"
+          BUMP_TYPE="patch"
+          if [[ "$OLD_VERSION" == *"a"* ]]; then
+              BUMP_TYPE="a"
+          elif [[ "$OLD_VERSION" == *"b"* ]]; then
+              BUMP_TYPE="b"
+          fi
+          COMMIT_MSG="$(git log -1 --pretty=%B)"
+          if [[ "$COMMIT_MSG" == *"#major"* ]]; then
+              BUMP_TYPE="major"
+          elif [[ "$COMMIT_MSG" == *"#minor"* ]]; then
+              BUMP_TYPE="minor"
+          elif [[ "$COMMIT_MSG" == *"#patch"* ]]; then
+              BUMP_TYPE="patch"
+          elif [[ "$COMMIT_MSG" == *"#alpha"* ]]; then
+              BUMP_TYPE="a"
+          elif [[ "$COMMIT_MSG" == *"#beta"* ]]; then
+              BUMP_TYPE="b"
+          fi
+          echo "BUMP_TYPE=$BUMP_TYPE" >> $GITHUB_OUTPUT
 
-            - name: Bump version
-              id: bump_version
-              run: |
-                hatch version ${{ steps.version.outputs.BUMP_TYPE }}
-                NEW_VERSION="$(hatch version)"
-                echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+      - name: Bump version
+        id: bump_version
+        run: |
+          hatch version ${{ steps.version.outputs.BUMP_TYPE }}
+          NEW_VERSION="$(hatch version)"
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-            - name: Determine if release steps should run
-              id: release_check
-              run: |
-                # Default to skipping release steps
-                echo "RUN_RELEASE=false" >> $GITHUB_ENV
+      - name: Determine if release steps should run
+        id: release_check
+        run: |
+          # Default to skipping release steps
+          echo "RUN_RELEASE=false" >> $GITHUB_ENV
 
-                # If the ref is main, check the commit message for [skip release]
-                if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-                    COMMIT_MSG="$(git log -1 --pretty=%B)"
-                    if [[ "$COMMIT_MSG" != *"[skip release]"* ]]; then
-                        echo "RUN_RELEASE=true" >> $GITHUB_ENV
-                    fi
-                fi
+          # If the ref is main, check the commit message for [skip release]
+          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+              COMMIT_MSG="$(git log -1 --pretty=%B)"
+              if [[ "$COMMIT_MSG" != *"[skip release]"* ]]; then
+                  echo "RUN_RELEASE=true" >> $GITHUB_ENV
+              fi
+          fi
 
-            - name: Commit version bump
-              if: ${{ env.RUN_RELEASE == 'true' }}
-              run: |
-                git config user.name "github-actions"
-                git config user.email "github-actions@github.com"
-                git add pyproject.toml
-                git commit -m "Bump version to ${{ steps.bump_version.outputs.NEW_VERSION }}"
-                git push
+      - name: Commit version bump
+        if: ${{ env.RUN_RELEASE == 'true' }}
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add pyproject.toml
+          git commit -m "Bump version to ${{ steps.bump_version.outputs.NEW_VERSION }}"
+          git push
 
-            - name: Create GitHub Release
-              if: ${{ env.RUN_RELEASE == 'true' }}
-              uses: actions/create-release@v1
-              with:
-                tag_name: v${{ steps.bump_version.outputs.NEW_VERSION }}
-                release_name: v${{ steps.bump_version.outputs.NEW_VERSION }}
-                draft: false
-                prerelease: false
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub Release
+        if: ${{ env.RUN_RELEASE == 'true' }}
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ steps.bump_version.outputs.NEW_VERSION }}
+          release_name: v${{ steps.bump_version.outputs.NEW_VERSION }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Upload Pages Artifact
-              if: ${{ env.RUN_RELEASE == 'true' }}
-              uses: actions/upload-pages-artifact@v3
-              with:
-                  path: scripts/catalog_notebook_output
-  
-            - name: Publish to PyPI
-              if: ${{ env.RUN_RELEASE == 'true' }}
-              run: |
-                hatch publish
-              env:
-                HATCH_INDEX_SERVER: pypi
-                HATCH_INDEX_USER: ${{ secrets.PYPI_USERNAME }}
-                HATCH_INDEX_AUTH: ${{ secrets.PYPI_PASSWORD }}
+      - name: Upload Pages Artifact
+        if: ${{ env.RUN_RELEASE == 'true' }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: scripts/catalog_notebook_output
 
+      - name: Publish to PyPI
+        if: ${{ env.RUN_RELEASE == 'true' }}
+        run: |
+          hatch publish
+        env:
+          HATCH_INDEX_SERVER: pypi
+          HATCH_INDEX_USER: ${{ secrets.PYPI_USERNAME }}
+          HATCH_INDEX_AUTH: ${{ secrets.PYPI_PASSWORD }}
 
-    deploy:
-        needs: test-and-release
-        runs-on: ubuntu-latest
-        environment:
-            name: github-pages
-            url: ${{ steps.deployment.outputs.page_url }}
-        
-        permissions:
-            pages: write
-            id-token: write
-        
-        steps:
-            - name: 🌐 Deploy to GitHub Pages
-              id: deployment
-              uses: actions/deploy-pages@v4
-              with:
-                  artifact_name: github-pages
+      - name: Deploy to GitHub Pages
+        if: ${{ env.RUN_RELEASE == 'true' }}
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages
