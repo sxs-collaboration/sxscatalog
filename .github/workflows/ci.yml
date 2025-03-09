@@ -79,8 +79,7 @@ jobs:
         id: bump_version
         run: |
           hatch version ${{ steps.version.outputs.BUMP_TYPE }}
-          NEW_VERSION="$(hatch version)"
-          echo "NEW_VERSION=_${NEW_VERSION}_"
+          NEW_VERSION="$(hatch version | tr -d '\n')"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Determine if release steps should run
