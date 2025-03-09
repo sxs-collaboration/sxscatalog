@@ -82,13 +82,13 @@ jobs:
           NEW_VERSION="$(hatch version | tr -d '\n')"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "new_version=${NEW_VERSION}" >> $GITHUB_ENV
-          PRE_RELEASE = "false"
+          prerelease="false"
           if [[ "$NEW_VERSION" == *"a"* ]]; then
-              PRE_RELEASE = "true"
+              prerelease="true"
           elif [[ "$NEW_VERSION" == *"b"* ]]; then
-              PRE_RELEASE = "true"
+              prerelease="true"
           fi
-          echo "prerelease=${PRE_RELEASE}" >> $GITHUB_ENV
+          echo "prerelease=${prerelease}" >> $GITHUB_ENV
 
       - name: Determine if release steps should run
         id: release_check
