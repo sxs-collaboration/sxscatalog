@@ -141,7 +141,7 @@ jobs:
         shell: bash
         run: |
           hatch build
-          hatch publish -r test
+          hatch publish
   
 
       # - name: Upload Pages Artifact
