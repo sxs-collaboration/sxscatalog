@@ -8,6 +8,7 @@
 #     "pandas==2.2.3",
 #     "plotly==6.0.0",
 #     "pyarrow==19.0.1",
+#     "requests==2.32.3",
 #     "sxs==2024.0.44",
 #     "traitlets==5.14.3",
 # ]
@@ -108,23 +109,37 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _():
+def _(mo):
+    @mo.cache
+    def download_json():
+        import requests
+        response = requests.get("https://raw.githubusercontent.com/moble/sxscatalogdata/main/simulations.json")
+        response.raise_for_status()
+        data_as_string = response.text
+        return data_as_string
+    return (download_json,)
+
+
+@app.cell(hide_code=True)
+def _(download_json):
     ### NOTE: This cell is hidden from the user in marimo's "app view".
     ### These commands are mostly here for nicer display; actual users
     ### will probably only need the commands mentioned above.
 
-    import sxs
+    import sxscatalog
     import numpy as np
     import math
     import warnings
     import pyarrow  # For efficient dataframe manipulation
+    import json
     import pandas as pd
 
     # TODO: Pick which one of these is better
     import plotly.express as px
     import altair as alt
 
-    sim = sxs.load("simulations", local=True)
+    sim_dict = json.loads(download_json())
+    sim = sxscatalog.simulations.simulations.Simulations(sim_dict)
     df0 = sim.dataframe  # We filter this below
 
     # The df object is actually a sxs.SimulationsDataFrame (so that we can have attributes like df.BBH),
@@ -132,7 +147,20 @@ def _():
     #
     # Fortunately, we can get the fancy display either by calling mo.ui.dataame(df) or by acting on df
     # with some function that returns a regular pd.DataFrame.
-    return alt, df0, math, np, pd, px, pyarrow, sim, sxs, warnings
+    return (
+        alt,
+        df0,
+        json,
+        math,
+        np,
+        pd,
+        px,
+        pyarrow,
+        sim,
+        sim_dict,
+        sxscatalog,
+        warnings,
+    )
 
 
 @app.cell(hide_code=True)
