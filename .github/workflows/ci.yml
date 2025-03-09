@@ -8,7 +8,7 @@ on:
   push:
     branches:
       - main
-    tags: ['*']
+    tags: ["*"]
   pull_request:
 
 concurrency:
@@ -28,6 +28,9 @@ jobs:
     permissions:
       pages: write
       id-token: write
+    # Provide an output so the next job knows whether to release
+    outputs:
+      RUN_RELEASE: ${{ steps.release_check.outputs.run_release }}
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -83,18 +86,18 @@ jobs:
         id: release_check
         run: |
           # Default to skipping release steps
-          echo "RUN_RELEASE=false" >> $GITHUB_ENV
+          echo "run_release=false" >> $GITHUB_OUTPUT
 
           # If the ref is main, check the commit message for [skip release]
           if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-              COMMIT_MSG="$(git log -1 --pretty=%B)"
-              if [[ "$COMMIT_MSG" != *"[skip release]"* ]]; then
-                  echo "RUN_RELEASE=true" >> $GITHUB_ENV
-              fi
+            COMMIT_MSG="$(git log -1 --pretty=%B)"
+            if [[ "$COMMIT_MSG" != *"[skip release]"* ]]; then
+              echo "run_release=true" >> $GITHUB_OUTPUT
+            fi
           fi
 
       - name: Commit version bump
-        if: ${{ env.RUN_RELEASE == 'true' }}
+        if: ${{ steps.release_check.outputs.run_release == 'true' }}
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
@@ -103,7 +106,7 @@ jobs:
           git push
 
       - name: Create GitHub Release
-        if: ${{ env.RUN_RELEASE == 'true' }}
+        if: ${{ steps.release_check.outputs.run_release == 'true' }}
         uses: actions/create-release@v1
         with:
           tag_name: v${{ steps.bump_version.outputs.NEW_VERSION }}
@@ -114,23 +117,33 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Pages Artifact
-        if: ${{ env.RUN_RELEASE == 'true' }}
+        if: ${{ steps.release_check.outputs.run_release == 'true' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: scripts/catalog_notebook_output
 
-      - name: Publish to PyPI
-        if: ${{ env.RUN_RELEASE == 'true' }}
-        run: |
-          hatch publish
-        env:
-          HATCH_INDEX_SERVER: pypi
-          HATCH_INDEX_USER: ${{ secrets.PYPI_USERNAME }}
-          HATCH_INDEX_AUTH: ${{ secrets.PYPI_PASSWORD }}
-
       - name: Deploy to GitHub Pages
-        if: ${{ env.RUN_RELEASE == 'true' }}
+        if: ${{ steps.release_check.outputs.run_release == 'true' }}
         id: deployment
         uses: actions/deploy-pages@v4
         with:
           artifact_name: github-pages
+
+  publish-to-pypi:
+    if: ${{ needs.test-and-release.outputs.RUN_RELEASE == 'true' }}
+    needs: test-and-release
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/sxscatalog
+    permissions:
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # trusted publishing is set up for this repo, so no credentials are needed
+        with:
+          repository-url: https://test.pypi.org/legacy/
