@@ -19,7 +19,7 @@ __generated_with = "0.11.17"
 app = marimo.App(
     width="full",
     app_title="SXS Catalog",
-    css_file="",
+    css_file="custom.css",
     html_head_file="",
 )
 
@@ -130,7 +130,7 @@ def _():
     # The df object is actually a sxs.SimulationsDataFrame (so that we can have attributes like df.BBH),
     # which subclasses — but is not a — pd.DataFrame, so the fancy display doesn't work directly.
     #
-    # Fortunately, we can get the fancy display either by callingmo.ui.dataame(df) or by acting on df
+    # Fortunately, we can get the fancy display either by calling mo.ui.dataame(df) or by acting on df
     # with some function that returns a regular pd.DataFrame.
     return alt, df0, math, np, pd, px, pyarrow, sim, sxs, warnings
 
