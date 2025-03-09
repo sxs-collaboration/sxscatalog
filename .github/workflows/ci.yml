@@ -47,10 +47,10 @@ jobs:
       - name: Run tests
         run: |
           hatch run tests:test
-          # hatch run marimo:check
+          hatch run marimo:check
 
-      # - name: Export notebook
-      #   run: hatch run marimo:convert
+      - name: Export notebook
+        run: hatch run marimo:convert
 
       - name: Determine bump type
         id: version
@@ -143,16 +143,15 @@ jobs:
           hatch build
           hatch publish
   
+      - name: Upload Pages Artifact
+        if: ${{ steps.release_check.outputs.run_release == 'true' }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: scripts/catalog_notebook_output
 
-      # - name: Upload Pages Artifact
-      #   if: ${{ steps.release_check.outputs.run_release == 'true' }}
-      #   uses: actions/upload-pages-artifact@v3
-      #   with:
-      #     path: scripts/catalog_notebook_output
-
-      # - name: Deploy to GitHub Pages
-      #   if: ${{ steps.release_check.outputs.run_release == 'true' }}
-      #   id: deployment
-      #   uses: actions/deploy-pages@v4
-      #   with:
-      #     artifact_name: github-pages
+      - name: Deploy to GitHub Pages
+        if: ${{ steps.release_check.outputs.run_release == 'true' }}
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages
