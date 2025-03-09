@@ -6,7 +6,6 @@
 #     "marimo",
 #     "numpy==2.1.3",
 #     "pandas==2.2.3",
-#     "plotly==6.0.0",
 #     "pyarrow==19.0.1",
 #     "requests==2.32.3",
 #     "sxscatalog==3.0.0a5",
@@ -73,9 +72,6 @@ def _(download_json):
     import pyarrow  # For efficient dataframe manipulation
     import json
     import pandas as pd
-
-    # TODO: Pick which one of these is better
-    import plotly.express as px
     import altair as alt
 
     sim_dict = json.loads(download_json())
@@ -94,7 +90,6 @@ def _(download_json):
         math,
         np,
         pd,
-        px,
         pyarrow,
         sim,
         sim_dict,
@@ -375,57 +370,6 @@ def _(chart_data, mo):
         else mo.md("Select a region in the plot above to see details here")
     )
     return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(
-        r"""
-        ---
-
-        The following plot is just to show that plotly can do much the same things that altair can do.
-
-          * Advantage: plotly has a clearer interface, with little icons to click to zoom, etc.
-          * Advantage: plotly has a lasso selection option, which is cool
-          * Disadvantage: it does not show a legend for marker sizes
-
-        I have to think about whether it's worth it to try to make plotly work as well as altair.
-        """
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _(
-    horizontal_axis,
-    marker_color,
-    marker_size,
-    mo,
-    np,
-    px,
-    table_data,
-    used_selectors,
-    vertical_axis,
-):
-    # used_selectors = [s.value for s in selectors if s.value is not None]
-    # df_restricted = table_data[used_selectors]
-    kwargs2 = dict(
-        x=horizontal_axis.value,
-        y=vertical_axis.value,
-        hover_data=used_selectors,
-    )
-    if marker_size.value is not None:
-        kwargs2["size"] = table_data[marker_size.value].replace(np.nan, table_data[marker_size.value].median())
-    if marker_color.value is not None:
-        kwargs2["color"] = marker_color.value
-
-    _plot = px.scatter(
-        table_data, **kwargs2
-    )
-
-    plot = mo.ui.plotly(_plot)
-    plot
-    return kwargs2, plot
 
 
 if __name__ == "__main__":
