@@ -28,67 +28,7 @@ app = marimo.App(
 @app.cell(hide_code=True)
 def _():
     import marimo as mo
-    import traitlets
-    import anywidget
-
-    class CopyToClipboard(anywidget.AnyWidget):
-        """Initialize a CopyToClipboard widget.
-
-        Args:
-            text_to_copy: String to copy to the clipboard when button is pressed.
-        """
-        text_to_copy = traitlets.Unicode("").tag(sync=True)
-        top = traitlets.Unicode("").tag(sync=True)
-        right = traitlets.Unicode("").tag(sync=True)
-
-        _esm = """
-        function render({ model, el }) {
-            // Create a button element
-            const button = document.createElement("button");
-            button.innerHTML = `
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-copy">
-                <rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect>
-                <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path>
-                <path d="M16 4h2a2 2 0 0 1 2 2v4"></path>
-                <path d="M21 14H11"></path>
-                <path d="m15 10-4 4 4 4"></path>
-              </svg>
-            `;
-            button.style.position = "absolute";
-            button.style.top = model.get("top");
-            button.style.right = model.get("right");
-
-            // Add a click event listener to the button
-            button.addEventListener("click", async () => {
-                try {
-                    // Copy the text to the clipboard
-                    await navigator.clipboard.writeText(model.get("text_to_copy"));
-                    console.log("Text copied to clipboard:", model.get("text_to_copy"));
-
-                    // Change the button icon to a check mark for 1 second
-                    const originalIcon = button.innerHTML;
-                    button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><path d="M20 6L9 17l-5-5"/></svg>';
-                    setTimeout(() => {
-                        button.innerHTML = originalIcon;
-                    }, 1000);
-                } catch (err) {
-                    console.error("Failed to copy text:", err);
-                }
-            });
-
-            // Append the button to the widget's element
-            el.appendChild(button);
-        };
-
-        export default {render};
-        """
-
-        def __init__(self, text_to_copy="", top="4em", right="0.5em", **kwargs):
-            super().__init__(**kwargs)
-            self.text_to_copy = text_to_copy
-            self.top = top
-            self.right = right
-    return CopyToClipboard, anywidget, mo, traitlets
+    return (mo,)
 
 
 @app.cell(hide_code=True)
@@ -104,7 +44,7 @@ def _(mo):
         df = sxs.load("dataframe")
         ```
         """
-    ).style({"width": "80%", "margin": "0 auto"})
+    ).style({"width": "70%", "margin": "0 auto"})
     return
 
 
@@ -145,7 +85,7 @@ def _(download_json):
     # The df object is actually a sxs.SimulationsDataFrame (so that we can have attributes like df.BBH),
     # which subclasses — but is not a — pd.DataFrame, so the fancy display doesn't work directly.
     #
-    # Fortunately, we can get the fancy display either by calling mo.ui.dataame(df) or by acting on df
+    # Fortunately, we can get the fancy display either by calling mo.ui.dataframe(df) or by acting on df
     # with some function that returns a regular pd.DataFrame.
     return (
         alt,
@@ -393,7 +333,7 @@ def _(chart, mo):
 
 
 @app.cell(hide_code=True)
-def _(CopyToClipboard, chart_data, math, mo):
+def _(chart_data, math, mo):
     # Show the code needed to load these simulations
     max_width = 6  # How many SXS IDs to allow on one line
     these_simulations =  ("this simulation" if len(chart_data)==1 else f"these {len(chart_data):,} simulations")
@@ -413,16 +353,12 @@ def _(CopyToClipboard, chart_data, math, mo):
             )
         )
     )
-    copy_load_code = CopyToClipboard(load_code, top="4.25em", right="0.85em")
     (
-        mo.vstack([
-            mo.md(f"You can load {these_simulations} with\n```python\n{load_code}\n```").style({"max-height": "300px"}),
-            copy_load_code
-        ]).style({"position": "relative", "overflow": "auto"})
+        mo.md(f"You can load {these_simulations} with\n```python\n{load_code}\n```").style({"max-height": "300px"})
         if len(chart_data) > 0
         else None
     )
-    return copy_load_code, load_code, max_width, these_simulations
+    return load_code, max_width, these_simulations
 
 
 @app.cell(hide_code=True)
