@@ -349,7 +349,7 @@ def _(chart_data, math, mo):
         )
     )
     (
-        mo.md(f"You can load {these_simulations} with\n```python\n{load_code}\n```").style({"max-height": "300px"})
+        mo.md(f"You can load {these_simulations} with\n```python\n{load_code}\n```").style({"max-height": "300px", "overflow": "auto"})
         if len(chart_data) > 0
         else None
     )
