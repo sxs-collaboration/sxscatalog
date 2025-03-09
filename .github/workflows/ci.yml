@@ -28,6 +28,7 @@ jobs:
     permissions:
       pages: write
       id-token: write
+      contents: write
     # Provide an output so the next job knows whether to release
     outputs:
       RUN_RELEASE: ${{ steps.release_check.outputs.run_release }}
