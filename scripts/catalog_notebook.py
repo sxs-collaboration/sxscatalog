@@ -42,8 +42,12 @@ def _(mo):
         import sxs
         df = sxs.load("dataframe")
         ```
+        That dataframe can be manipulated [as usual by pandas](https://pandas.pydata.org/pandas-docs/stable/user_guide/10min.html).
+        See the [`sxs` documentation](https://sxs.readthedocs.io/en/main/tutorials/01-Simulations_and_Metadata/) for details about the metadata.
+
+        This page presents the data in graphical and tabular form, allowing you to explore the data interactively.
         """
-    ).style({"width": "70%", "margin": "0 auto"})
+    ).style({"width": "68%", "margin": "0 auto"})
     return
 
 
@@ -104,7 +108,7 @@ def _(mo):
         r"""
         ---
 
-        The dataframe has several [useful attributes](https://sxs.readthedocs.io/en/main/api/simulations/#simulationsdataframe-class) that allow selecting important subsets of the data.  Use the radio buttons below to select those attributes.
+        The dataframe has several useful [attributes](https://sxs.readthedocs.io/en/main/api/simulations/#simulationsdataframe-class) that allow selecting important subsets of the data.  Use the radio buttons below to select those subsets.
         """
     )
     return
@@ -226,9 +230,9 @@ def _(df, mo, simple_filtering):
 @app.cell(hide_code=True)
 def _(mo, simple_filtering):
     mo.md(
-        "We now plot selected columns from the filtered data above."
+        "We can plot selected columns from the filtered data above."
         + (
-            "  If you have selected checkboxes in the table, only those will be plotted."
+            "  If you select checkboxes in the table, only those rows will be plotted."
             if simple_filtering.value else ""
         )
     )
@@ -323,7 +327,11 @@ def _(chart, mo):
     # Narrow dat the data further to just the data from (or selected in) the chart above
     chart_data = chart.value if len(chart.value) > 0 else chart.data
 
-    mo.md("The following data can be further restricted by selecting a point or region on the plot; otherwise all data in the plot will be used.")
+    (
+        mo.md("The following data can be further restricted by selecting a point or region on the plot; otherwise all data in the plot will be used.")
+        if len(chart.value) == 0 else
+        None
+    )
     return (chart_data,)
 
 
@@ -348,28 +356,18 @@ def _(chart_data, math, mo):
             )
         )
     )
-    (
-        mo.md(f"You can load {these_simulations} with\n```python\n{load_code}\n```").style({"max-height": "300px", "overflow": "auto"})
-        if len(chart_data) > 0
-        else None
-    )
-    return load_code, max_width, these_simulations
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""The following table shows only the data selected in the plot above.""")
-    return
-
-
-@app.cell(hide_code=True)
-def _(chart_data, mo):
-    (
+    final_table = (
         mo.ui.table(chart_data.drop("SXS ID", axis=1), page_size=20)
         if len(chart_data) > 0
         else mo.md("Select a region in the plot above to see details here")
     )
-    return
+
+    mo.vstack([
+        mo.md(f"You can load {these_simulations} with\n"),
+        mo.md(f"```python\n{load_code}\n```\n\n").style({"max-height": "300px", "overflow": "auto"}),
+        mo.md(f"The metadata summary table for that selection follows:\n{final_table}"),
+    ])
+    return final_table, load_code, max_width, these_simulations
 
 
 if __name__ == "__main__":
