@@ -108,6 +108,8 @@ jobs:
       - name: Commit version bump
         if: ${{ steps.release_check.outputs.run_release == 'true' }}
         run: |
+          # Note that we need to set read and write permissions under
+          # "Settings" > "Actions" > "General" > "Workflow permissions"
           git config user.name github-actions
           git config user.email github-actions@github.com
           git add src/sxscatalog/__about__.py
