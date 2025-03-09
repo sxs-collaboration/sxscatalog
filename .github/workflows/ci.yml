@@ -131,6 +131,19 @@ jobs:
           draft: false
           prerelease: ${{ env.prerelease }}
 
+      - name: Publish to PyPI
+        if: ${{ steps.release_check.outputs.run_release == 'true' }}
+        env:
+          # 1) Get key from https://pypi.org/manage/account/token/
+          # 2) Copy it to Github > repo > Settings > Secrets > Actions > New repository secret
+          HATCH_INDEX_USER: __token__
+          HATCH_INDEX_AUTH: ${{ secrets.PYPI_TOKEN }}
+        shell: bash
+        run: |
+          hatch build
+          hatch publish -r test
+  
+
       # - name: Upload Pages Artifact
       #   if: ${{ steps.release_check.outputs.run_release == 'true' }}
       #   uses: actions/upload-pages-artifact@v3
@@ -143,22 +156,3 @@ jobs:
       #   uses: actions/deploy-pages@v4
       #   with:
       #     artifact_name: github-pages
-
-  publish-to-pypi:
-    if: ${{ needs.test-and-release.outputs.RUN_RELEASE == 'true' }}
-    needs: test-and-release
-    runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/project/sxscatalog
-    permissions:
-      id-token: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        # trusted publishing is set up for this repo, so no credentials are needed
-        with:
-          repository-url: https://test.pypi.org/legacy/
