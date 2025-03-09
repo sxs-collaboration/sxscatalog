@@ -78,6 +78,7 @@ jobs:
       - name: Bump version
         id: bump_version
         run: |
+          export NO_COLOR=1  # To turn off formatting in `hatch version`
           hatch version ${{ steps.version.outputs.BUMP_TYPE }}
           NEW_VERSION="$(hatch version | tr -d '\n')"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
