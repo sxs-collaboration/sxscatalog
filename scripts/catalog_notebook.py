@@ -9,7 +9,7 @@
 #     "plotly==6.0.0",
 #     "pyarrow==19.0.1",
 #     "requests==2.32.3",
-#     "sxs==2024.0.44",
+#     "sxscatalog==3.0.0a5",
 #     "traitlets==5.14.3",
 # ]
 # ///
