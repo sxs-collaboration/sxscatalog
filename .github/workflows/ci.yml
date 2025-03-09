@@ -150,6 +150,7 @@ jobs:
           path: scripts/catalog_notebook_output
 
       - name: Deploy to GitHub Pages
+        # Be sure to allow this under Settings > Pages > Build and deployment > Source > Github Actions
         if: ${{ steps.release_check.outputs.run_release == 'true' }}
         id: deployment
         uses: actions/deploy-pages@v4
