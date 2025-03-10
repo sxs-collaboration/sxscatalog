@@ -74,13 +74,15 @@ def _(pd):
 
 
 @app.cell(hide_code=True)
-def _(mo, tag_name):
+def _(current_time, mo, release_published, tag_name):
     # Title and introduction
     mo.md(
         rf"""
         # The SXS Catalog of Simulations
 
-        The metadata describing all simulations published by the SXS collaboration can be loaded into [a dataframe](https://sxs.readthedocs.io/en/main/api/simulations/#simulationsdataframe-class) using [the `sxs` package](https://github.com/sxs-collaboration/sxs/) as
+        This page presents metadata from release {tag_name[1:]} of the SXS catalog, which was published on {release_published}, and is the current release as of {current_time}.
+
+        The metadata can be loaded into [a dataframe](https://sxs.readthedocs.io/en/main/api/simulations/#simulationsdataframe-class) using [the `sxs` package](https://github.com/sxs-collaboration/sxs/):
         ```python
         import sxs
         df = sxs.load("dataframe", tag="{tag_name}")
@@ -89,20 +91,17 @@ def _(mo, tag_name):
         That dataframe can be manipulated [as usual by pandas](https://pandas.pydata.org/pandas-docs/stable/user_guide/10min.html).
         See the [`sxs` documentation](https://sxs.readthedocs.io/en/main/tutorials/01-Simulations_and_Metadata/) for details about the metadata.
 
-        This page presents the data in graphical and tabular form, allowing you to explore the data interactively.
+        Below, the dataframe is presented in graphical and tabular form, allowing you to explore it interactively.
         """
     ).style({"width": "68%", "margin": "0 auto"})
     return
 
 
 @app.cell(hide_code=True)
-def _(current_time, mo, release_published, tag_name):
+def _(mo):
     mo.md(
         rf"""
         ---
-
-        The data being used here are from release {tag_name}, which was published on {release_published}, and is the current release as of {current_time}.
-
         The dataframe has several useful [attributes](https://sxs.readthedocs.io/en/main/api/simulations/#simulationsdataframe-class) that allow selecting important subsets of the data.  Use the radio buttons below to select those subsets.
         """
     )
