@@ -131,8 +131,8 @@ class Simulations(collections.OrderedDict):
     calls to `sxs.load` will automatically use this local copy
     of the simulations.
     """
-    last_modified_url = "https://api.github.com/repos/sxs-collaboration/sxs/contents/simulations.json?ref=simulations"
-    url = "https://github.com/sxs-collaboration/sxs/raw/simulations/simulations.json"
+    releases_url = "https://api.github.com/repos/moble/sxscatalogdata/releases"
+    url = "https://raw.githubusercontent.com/moble/sxscatalogdata/{tag}/simulations.json"
 
     def __init__(self, sims):
         """Initialize the Simulations dictionary
@@ -149,34 +149,15 @@ class Simulations(collections.OrderedDict):
         )
 
     @classmethod
-    def remote_timestamp(cls, download):
+    def get_latest_release(cls):
+        """Retrieve the most-recently published release of the catalog from github"""
         import requests
-        from datetime import datetime, timezone
-        if not download:
-            return datetime.min.replace(tzinfo=timezone.utc)
-        failed = False
-        try:
-            response = requests.head(
-                Simulations.last_modified_url,
-                headers={"X-GitHub-Api-Version": "2022-11-28"},
-            )
-            if response.status_code != 200 or "Last-Modified" not in response.headers:
-                failed = True
-            else:
-                remote_timestamp = datetime.strptime(
-                    response.headers["Last-Modified"], "%a, %d %b %Y %H:%M:%S GMT"
-                ).replace(tzinfo=timezone.utc)
-        except Exception as e:
-            print("Got exception while trying to get the remote timestamp:", e)
-            failed = True
-        if failed:
-            print(
-                f"Failed to get the remote timestamp from <{Simulations.last_modified_url}>.\n"
-                + "Assuming it is old."
-            )
-            return datetime.min.replace(tzinfo=timezone.utc)
-        return remote_timestamp
-    
+        releases_response = requests.get(cls.releases_url)
+        releases_response.raise_for_status()
+        releases_data = releases_response.json()
+        latest_release = max(releases_data, key=lambda r: r["published_at"])
+        return latest_release
+
     @classmethod
     def local(cls, directory=None, *, download=None, output_file=None, compute_md5=False, show_progress=False):
         """Load the local catalog of SXS simulations
@@ -251,7 +232,12 @@ class Simulations(collections.OrderedDict):
         return simulations
 
     @classmethod
-    def load(cls, download=None, *, local=False, annex_dir=None, output_file=None, compute_md5=False, show_progress=False):
+    def load(
+        cls,
+        download=None, *,
+        tag="", local=False, annex_dir=None, output_file=None,
+        compute_md5=False, show_progress=False
+    ):
         """Load the catalog of SXS simulations
 
         Note that — unlike most SXS data files — the simulations file
@@ -277,8 +263,12 @@ class Simulations(collections.OrderedDict):
 
         Keyword-only Parameters
         -----------------------
+        tag : str, optional
+            The git tag of the simulations file to load.  If not
+            provided, the latest tag will be used.  This cannot be
+            provided if either `local` or `annex_dir` is provided.
         local : {None, bool}, optional
-            If True, this function will load local simulations from
+            If True, this function will load *local* simulations from
             the sxs cache.  To prepare the cache, you may wish to call
             `sxs.write_local_simulations`.
         annex_dir : {None, str, Path}, optional
@@ -301,11 +291,14 @@ class Simulations(collections.OrderedDict):
         : Avoid caching the result of this function
 
         """
-        from datetime import datetime, timezone
         import json
         import zipfile
-        from .. import sxs_directory, read_config
-        from ..utilities import download_file
+        import warnings
+        from packaging.version import Version
+        from ..utilities import sxs_directory, read_config, download_file
+
+        if tag and (local or annex_dir is not None):
+            raise ValueError("Cannot specify a `tag` with `local` or `annex_dir`")
 
         if hasattr(cls, "_simulations"):
             return cls._simulations
@@ -322,46 +315,66 @@ class Simulations(collections.OrderedDict):
 
         progress = read_config("download_progress", True)
 
-        remote_timestamp = cls.remote_timestamp(download is not False)  # Test for literal `False`
+        if not tag:
+            if download is not False:
+                latest_release = cls.get_latest_release()
+                tag = latest_release["tag_name"]
+                print(
+                    f"Loading SXS simulations using latest tag '{tag}', "
+                    f"published at {latest_release['published_at']}."
+                )
+            else:
+                tags = [
+                    Version(f.stem.split("_")[-1])
+                    for f in sxs_directory("cache").glob("simulations_*.bz2")
+                ]
+                if tags:
+                    tag = f"v{max(tags)}"
+                    warning = (
+                        f"\nDownloads were turned off, so we are using the latest cached"
+                        f"\nsimulations file, tagged {tag}, which may be out of date."
+                    )
+                    warnings.warn(warning)
+                else:
+                    raise ValueError(f"No simulations files found in the cache and {download=} was passed")
+            return cls.load(download=download, tag=tag, show_progress=show_progress)
 
-        cache_path = sxs_directory("cache") / "simulations.zip"
+        # Normalize the tag to "v" followed by a normalized Version
+        tag = f"v{Version(tag)}"
 
-        if cache_path.exists():
-            local_timestamp = datetime.fromtimestamp(cache_path.stat().st_mtime, timezone.utc)
-        elif download is False:
-            raise ValueError(f"Simulations not found in '{cache_path}' and downloading was turned off")
-        else:
-            local_timestamp = datetime.min.replace(tzinfo=timezone.utc)
+        cache_path = sxs_directory("cache") / f"simulations_{tag}.bz2"
 
         download_failed = False
-        if (download or download is None) and remote_timestamp > local_timestamp:
-            # 1. Download the full json file (zipped in flight, but auto-decompressed on arrival)
-            # 2. Zip to a temporary file (using bzip2, which is better than the in-flight compression)
-            # 3. Replace the original simulations.zip with the temporary zip file
-            # 4. Remove the full json file
-            # 5. Make sure the temporary zip file is gone too
-            temp_json = cache_path.with_suffix(".temp.json")
-            temp_zip = cache_path.with_suffix(".temp.zip")
-            try:
-                try:
-                    download_file(cls.url, temp_json, progress=progress, if_newer=False)
-                except Exception as e:
-                    if download:
-                        raise RuntimeError(f"Failed to download '{cls.url}'; try setting `download=False`") from e
-                    download_failed = e  # We'll try the cache
-                else:
-                    if temp_json.exists():
-                        with zipfile.ZipFile(temp_zip, "w", compression=zipfile.ZIP_BZIP2) as simulations_zip:
-                            simulations_zip.write(temp_json, arcname="simulations.json")
-                        temp_zip.replace(cache_path)
-            finally:
-                temp_json.unlink(missing_ok=True)
-                temp_zip.unlink(missing_ok=True)
-
         if not cache_path.exists():
             if download is False:  # Test if it literally *is* False, rather than just casts to False
-                raise ValueError(f"The simulations file was not found in '{cache_path}', and downloading was turned off")
-            elif download_failed:
+                raise ValueError(f"Simulations not found in '{cache_path}' and downloading was turned off")
+            else:
+                # 1. Download the full json file (zipped in flight, but auto-decompressed on arrival)
+                # 2. Zip to a temporary file (using bzip2, which is better than the in-flight compression)
+                # 3. Replace the original simulations.zip with the temporary zip file
+                # 4. Remove the full json file
+                # 5. Make sure the temporary zip file is gone too
+                temp_json = cache_path.with_suffix(".temp.json")
+                temp_zip = cache_path.with_suffix(".temp.bz2")
+                try:
+                    try:
+                        download_file(cls.url.format(tag=tag), temp_json, progress=progress, if_newer=False)
+                    except Exception as e:
+                        raise RuntimeError(
+                            f"\nFailed to download '{cls.url.format(tag=tag)}'."
+                            f"\nMaybe {tag=} does not exist?"
+                        ) from e
+                    else:
+                        if temp_json.exists():
+                            with zipfile.ZipFile(temp_zip, "w", compression=zipfile.ZIP_BZIP2) as simulations_zip:
+                                simulations_zip.write(temp_json, arcname="simulations.json")
+                            temp_zip.replace(cache_path)
+                finally:
+                    temp_json.unlink(missing_ok=True)
+                    temp_zip.unlink(missing_ok=True)
+
+        if not cache_path.exists():
+            if download_failed:
                 raise ValueError(f"Simulations not found in '{cache_path}' and download failed") from download_failed
             else:
                 raise ValueError(f"Simulations not found in '{cache_path}' for unknown reasons")

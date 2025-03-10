@@ -29,6 +29,7 @@ dependencies = [
   "tqdm",
   "pandas",
   "numpy",
+  "packaging"
 ]
 
 [project.urls]
