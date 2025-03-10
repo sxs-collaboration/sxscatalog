@@ -45,8 +45,7 @@ jobs:
         run: pip install --upgrade pip hatch
 
       - name: Run tests
-        run: |
-          hatch run tests:test
+        run: hatch run tests:test
 
       - name: Check marimo
         if: "!contains(github.event.head_commit.message, '[skip marimo check]')"
