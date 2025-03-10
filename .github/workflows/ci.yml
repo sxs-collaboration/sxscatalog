@@ -47,7 +47,10 @@ jobs:
       - name: Run tests
         run: |
           hatch run tests:test
-          hatch run marimo:check
+
+      - name: Check marimo
+        if: "!contains(github.event.head_commit.message, '[skip marimo check]')"
+        run: hatch run marimo:check
 
       - name: Export notebook
         run: hatch run marimo:convert
