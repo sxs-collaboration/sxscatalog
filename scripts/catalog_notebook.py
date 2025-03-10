@@ -8,7 +8,7 @@
 #     "pandas==2.2.3",
 #     "pyarrow==19.0.1",
 #     "requests==2.32.3",
-#     "sxscatalog==3.0.0a5",
+#     "sxscatalog==3.0.0a11",
 #     "traitlets==5.14.3",
 # ]
 # ///
@@ -26,7 +26,7 @@ app = marimo.App(
 
 @app.cell(hide_code=True)
 def _():
-    # Import the necessary libraries
+    # Import the libraries needed just for demonstrations in this notebook
     import marimo as mo
     import numpy as np
     import math
@@ -39,17 +39,43 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _(pd):
+    # Import the sxs package
+
+    # NOTE: We use the more basic `sxscatalog` package, because `sxs` cannot run in the browser
+    # because it depends on `numba`, and because marimo cannot interact with the filesystem to
+    # persistently cache large data files.  Normally, we would use `sxs` itself and load the
+    # dataframe with `sim = sxs.load("simulations", tag={tag})`.
+    import sxscatalog
+
+    latest_release = sxscatalog.simulations.Simulations.get_latest_release()
+    tag_name = latest_release["tag_name"]
+    release_published = pd.to_datetime(latest_release["published_at"]).strftime("%-I:%M %p on %B %d, %Y")
+
+    # Note that we load the dataframe as `df0`, so that we can filter it below as `df`
+    df0 = sxscatalog.load("dataframe", tag=tag_name)
+
+    # The dataframe is actually a sxs.SimulationsDataFrame (so that we can have attributes like df.BBH),
+    # which subclasses — but is not a — pd.DataFrame, so marimo fanciness doesn't work if the dataframe
+    # is just output raw.  We can get the fancy display either by calling mo.ui.dataframe(df) or by
+    # acting on df with some function that returns a regular pd.DataFrame.
+    return df0, latest_release, release_published, sxscatalog, tag_name
+
+
+@app.cell(hide_code=True)
+def _(mo, tag_name):
     # Title and introduction
     mo.md(
-        r"""
+        rf"""
         # The SXS Catalog of Simulations
 
         The metadata describing all simulations published by the SXS collaboration can be loaded into [a dataframe](https://sxs.readthedocs.io/en/main/api/simulations/#simulationsdataframe-class) using [the `sxs` package](https://github.com/sxs-collaboration/sxs/) as
         ```python
         import sxs
-        df = sxs.load("dataframe")
+        df = sxs.load("dataframe", tag="{tag_name}")
         ```
+        (Omit the `tag` argument to just load whatever the latest catalog version is at the time you call this function.)
+
         That dataframe can be manipulated [as usual by pandas](https://pandas.pydata.org/pandas-docs/stable/user_guide/10min.html).
         See the [`sxs` documentation](https://sxs.readthedocs.io/en/main/tutorials/01-Simulations_and_Metadata/) for details about the metadata.
 
@@ -60,44 +86,12 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo):
-    @mo.cache
-    def download_json():
-        import requests
-        response = requests.get("https://raw.githubusercontent.com/moble/sxscatalogdata/main/simulations.json")
-        response.raise_for_status()
-        data_as_string = response.text
-        return data_as_string
-    return (download_json,)
-
-
-@app.cell(hide_code=True)
-def _(download_json, json):
-    ### NOTE: This cell is hidden from the user in marimo's "app view".
-    ### These commands are mostly here for nicer display; actual users
-    ### will probably only need the commands mentioned above.
-
-    # We use the more basic `sxscatalog` package, because `sxs` has a lot of dependencies,
-    # including `numba`, which does not run in the browser (yet).  Normally, we would load
-    # this with `sim = sxs.load("simulations")`.
-    import sxscatalog
-    sim_dict = json.loads(download_json())
-    sim = sxscatalog.simulations.simulations.Simulations(sim_dict)
-    df0 = sim.dataframe  # We filter this below
-
-    # The df object is actually a sxs.SimulationsDataFrame (so that we can have attributes like df.BBH),
-    # which subclasses — but is not a — pd.DataFrame, so the fancy display doesn't work directly.
-    #
-    # Fortunately, we can get the fancy display either by calling mo.ui.dataframe(df) or by acting on df
-    # with some function that returns a regular pd.DataFrame.
-    return df0, sim, sim_dict, sxscatalog
-
-
-@app.cell(hide_code=True)
-def _(mo):
+def _(mo, release_published, tag_name):
     mo.md(
-        r"""
+        rf"""
         ---
+
+        The data being used in this notebook are from release {tag_name}, which was published at {release_published}.
 
         The dataframe has several useful [attributes](https://sxs.readthedocs.io/en/main/api/simulations/#simulationsdataframe-class) that allow selecting important subsets of the data.  Use the radio buttons below to select those subsets.
         """
