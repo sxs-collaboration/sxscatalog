@@ -26,8 +26,16 @@ app = marimo.App(
 
 @app.cell(hide_code=True)
 def _():
+    # Import the necessary libraries
     import marimo as mo
-    return (mo,)
+    import numpy as np
+    import math
+    import warnings
+    import pyarrow  # For efficient dataframe manipulation
+    import json
+    import pandas as pd
+    import altair as alt
+    return alt, json, math, mo, np, pd, pyarrow, warnings
 
 
 @app.cell(hide_code=True)
@@ -64,20 +72,15 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(download_json):
+def _(download_json, json):
     ### NOTE: This cell is hidden from the user in marimo's "app view".
     ### These commands are mostly here for nicer display; actual users
     ### will probably only need the commands mentioned above.
 
+    # We use the more basic `sxscatalog` package, because `sxs` has a lot of dependencies,
+    # including `numba`, which does not run in the browser (yet).  Normally, we would load
+    # this with `sim = sxs.load("simulations")`.
     import sxscatalog
-    import numpy as np
-    import math
-    import warnings
-    import pyarrow  # For efficient dataframe manipulation
-    import json
-    import pandas as pd
-    import altair as alt
-
     sim_dict = json.loads(download_json())
     sim = sxscatalog.simulations.simulations.Simulations(sim_dict)
     df0 = sim.dataframe  # We filter this below
@@ -87,19 +90,7 @@ def _(download_json):
     #
     # Fortunately, we can get the fancy display either by calling mo.ui.dataframe(df) or by acting on df
     # with some function that returns a regular pd.DataFrame.
-    return (
-        alt,
-        df0,
-        json,
-        math,
-        np,
-        pd,
-        pyarrow,
-        sim,
-        sim_dict,
-        sxscatalog,
-        warnings,
-    )
+    return df0, sim, sim_dict, sxscatalog
 
 
 @app.cell(hide_code=True)
