@@ -48,6 +48,10 @@ def _(pd):
     # dataframe with `sim = sxs.load("simulations", tag={tag})`.
     import sxscatalog
 
+    current_time = pd.Timestamp.now().strftime("%-I:%M %p on %B %d, %Y")
+
+    # First, we'll get the latest release so that we can write it in the notebook;
+    # `sxscatalog.load("dataframe")` would do this on its own.
     latest_release = sxscatalog.simulations.Simulations.get_latest_release()
     tag_name = latest_release["tag_name"]
     release_published = pd.to_datetime(latest_release["published_at"]).strftime("%B %d, %Y")
@@ -59,7 +63,14 @@ def _(pd):
     # which subclasses — but is not a — pd.DataFrame, so marimo fanciness doesn't work if the dataframe
     # is just output raw.  We can get the fancy display either by calling mo.ui.dataframe(df) or by
     # acting on df with some function that returns a regular pd.DataFrame.
-    return df0, latest_release, release_published, sxscatalog, tag_name
+    return (
+        current_time,
+        df0,
+        latest_release,
+        release_published,
+        sxscatalog,
+        tag_name,
+    )
 
 
 @app.cell(hide_code=True)
@@ -74,7 +85,6 @@ def _(mo, tag_name):
         import sxs
         df = sxs.load("dataframe", tag="{tag_name}")
         ```
-        (Omit the `tag` argument to just load whatever the latest catalog version is at the time you call this function.)
 
         That dataframe can be manipulated [as usual by pandas](https://pandas.pydata.org/pandas-docs/stable/user_guide/10min.html).
         See the [`sxs` documentation](https://sxs.readthedocs.io/en/main/tutorials/01-Simulations_and_Metadata/) for details about the metadata.
@@ -86,12 +96,12 @@ def _(mo, tag_name):
 
 
 @app.cell(hide_code=True)
-def _(mo, release_published, tag_name):
+def _(current_time, mo, release_published, tag_name):
     mo.md(
         rf"""
         ---
 
-        The data being used in this notebook are from release {tag_name}, which was published on {release_published}.
+        The data being used here are from release {tag_name}, which was published on {release_published}, and is the current release as of {current_time}.
 
         The dataframe has several useful [attributes](https://sxs.readthedocs.io/en/main/api/simulations/#simulationsdataframe-class) that allow selecting important subsets of the data.  Use the radio buttons below to select those subsets.
         """
@@ -321,23 +331,26 @@ def _(chart, mo):
 
 
 @app.cell(hide_code=True)
-def _(chart_data, math, mo):
+def _(chart_data, math, mo, tag_name):
     # Show the code needed to load these simulations
     max_width = 6  # How many SXS IDs to allow on one line
     these_simulations =  ("this simulation" if len(chart_data)==1 else f"these {len(chart_data):,} simulations")
     load_code = (
-        f"""sim = sxs.load("{chart_data.index[0]}")"""
-        if len(chart_data)==1 else
-        (
-            "sims = [sxs.load(sim) for sim in [\"" + "\", \"".join(chart_data.index) + "\"]]"
-            if len(chart_data) < max_width else
+        f"""import sxs\ndf = sxs.load("dataframe", tag="{tag_name}")\n"""
+        + (
+            f"""sim = sxs.load("{chart_data.index[0]}")"""
+            if len(chart_data)==1 else
             (
-                "sims = [sxs.load(sim) for sim in [\n    \""
-                + "\",\n    \"".join(
-                    "\", \"".join(chart_data.index[i:min(i+max_width, len(chart_data.index))])
-                    for i in range(0, math.ceil(len(chart_data.index)/max_width)*max_width, max_width)
+                "sims = [sxs.load(sim) for sim in [\"" + "\", \"".join(chart_data.index) + "\"]]"
+                if len(chart_data) < max_width else
+                (
+                    "sims = [sxs.load(sim) for sim in [\n    \""
+                    + "\",\n    \"".join(
+                        "\", \"".join(chart_data.index[i:min(i+max_width, len(chart_data.index))])
+                        for i in range(0, math.ceil(len(chart_data.index)/max_width)*max_width, max_width)
+                    )
+                    + "\"\n]]"
                 )
-                + "\"\n]]"
             )
         )
     )
