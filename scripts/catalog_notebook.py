@@ -80,7 +80,7 @@ def _(current_time, mo, release_published, tag_name):
         rf"""
         # The SXS Catalog of Simulations
 
-        This page presents metadata from release {tag_name[1:]} of the SXS catalog, which was published on {release_published}, and is the current release as of {current_time}.
+        This page presents metadata from version {tag_name[1:]} of the SXS catalog, which was released on {release_published}, and is the current release as of <span data-tooltip="{current_time}">when you opened this page</span>.
 
         The metadata can be loaded into [a dataframe](https://sxs.readthedocs.io/en/main/api/simulations/#simulationsdataframe-class) using [the `sxs` package](https://github.com/sxs-collaboration/sxs/):
         ```python
@@ -102,7 +102,7 @@ def _(mo):
     mo.md(
         rf"""
         ---
-        The dataframe has several useful [attributes](https://sxs.readthedocs.io/en/main/api/simulations/#simulationsdataframe-class) that allow selecting important subsets of the data.  Use the radio buttons below to select those subsets.
+        The dataframe has several useful [attributes](https://sxs.readthedocs.io/en/main/api/simulations/#simulationsdataframe-class) that allow selecting important subsets of the data.  Use the buttons below to select those subsets.
         """
     )
     return
