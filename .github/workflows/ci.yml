@@ -94,6 +94,10 @@ jobs:
           fi
           echo "prerelease=${prerelease}" >> $GITHUB_ENV
 
+      - name: Copy version to catalog_notebook.py dependencies
+        run: |
+          sed -i "s/sxscatalog==.*\"/sxscatalog==${{ env.new_version }}\"/" scripts/catalog_notebook.py
+
       - name: Determine if release steps should run
         id: release_check
         run: |
@@ -116,7 +120,7 @@ jobs:
           # "Settings" > "Actions" > "General" > "Workflow permissions"
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git add src/sxscatalog/__about__.py
+          git add src/sxscatalog/__about__.py scripts/catalog_notebook.py
           git commit -m "Bump version to v${new_version}"
           git tag -a "v${new_version}" -m "Version ${new_version}"
           git status
