@@ -50,7 +50,7 @@ def _(pd):
 
     latest_release = sxscatalog.simulations.Simulations.get_latest_release()
     tag_name = latest_release["tag_name"]
-    release_published = pd.to_datetime(latest_release["published_at"]).strftime("%-I:%M %p on %B %d, %Y")
+    release_published = pd.to_datetime(latest_release["published_at"]).strftime("%B %d, %Y")
 
     # Note that we load the dataframe as `df0`, so that we can filter it below as `df`
     df0 = sxscatalog.load("dataframe", tag=tag_name)
@@ -91,7 +91,7 @@ def _(mo, release_published, tag_name):
         rf"""
         ---
 
-        The data being used in this notebook are from release {tag_name}, which was published at {release_published}.
+        The data being used in this notebook are from release {tag_name}, which was published on {release_published}.
 
         The dataframe has several useful [attributes](https://sxs.readthedocs.io/en/main/api/simulations/#simulationsdataframe-class) that allow selecting important subsets of the data.  Use the radio buttons below to select those subsets.
         """
