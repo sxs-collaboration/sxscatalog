@@ -48,7 +48,7 @@ def _(pd):
     # dataframe with `sim = sxs.load("simulations", tag={tag})`.
     import sxscatalog
 
-    current_time = pd.Timestamp.now().strftime("%-I:%M %p on %B %d, %Y")
+    current_time = pd.Timestamp.now().strftime("%H:%M on %B %d, %Y")
 
     # First, we'll get the latest release so that we can write it in the notebook;
     # `sxscatalog.load("dataframe")` would do this on its own.
