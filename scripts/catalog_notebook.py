@@ -93,7 +93,7 @@ def _(current_time, mo, release_published, tag_name):
 
         Below, the dataframe is presented in graphical and tabular form, allowing you to explore it interactively.
         """
-    ).style({"width": "68%", "margin": "0 auto"})
+    ).style({"max-width": "725px", "margin": "0 auto"})
     return
 
 
