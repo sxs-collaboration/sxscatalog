@@ -24,10 +24,17 @@ app = marimo.App(
 )
 
 
+@app.cell
+def _():
+    import marimo as mo
+
+    mo.md(r"""<h1 style="text-align: center;">The SXS Catalog of Simulations</h1>""")
+    return (mo,)
+
+
 @app.cell(hide_code=True)
 def _():
     # Import the libraries needed just for demonstrations in this notebook
-    import marimo as mo
     import numpy as np
     import math
     import warnings
@@ -35,12 +42,12 @@ def _():
     import json
     import pandas as pd
     import altair as alt
-    return alt, json, math, mo, np, pd, pyarrow, warnings
+    return alt, json, math, np, pd, pyarrow, warnings
 
 
 @app.cell(hide_code=True)
 def _(pd):
-    # Import the sxs package
+    # Import the sxs package and load the dataframe
 
     # NOTE: We use the more basic `sxscatalog` package, because `sxs` cannot run in the browser
     # because it depends on `numba`, and because marimo cannot interact with the filesystem to
@@ -78,8 +85,6 @@ def _(current_time, mo, release_published, tag_name):
     # Title and introduction
     mo.md(
         rf"""
-        # The SXS Catalog of Simulations
-
         This page presents metadata from version {tag_name[1:]} of the SXS catalog, which was released on {release_published}, and is the current release as of <span data-tooltip="{current_time}">when you opened this page</span>.
 
         The metadata can be loaded into [a dataframe](https://sxs.readthedocs.io/en/main/api/simulations/#simulationsdataframe-class) using [the `sxs` package](https://github.com/sxs-collaboration/sxs/):
