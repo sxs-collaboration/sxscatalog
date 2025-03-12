@@ -345,7 +345,7 @@ def _(chart_data, math, mo, tag_name):
             f"""sim = sxs.load("{chart_data.index[0]}")"""
             if len(chart_data)==1 else
             (
-                "sims = [sxs.load(sim) for sim in [\"" + "\", \"".join(chart_data.index) + "\"]]"
+                "sims = [sxs.load(sxs_id) for sxs_id in [\"" + "\", \"".join(chart_data.index) + "\"]]"
                 if len(chart_data) < max_width else
                 (
                     "sims = [sxs.load(sim) for sim in [\n    \""
