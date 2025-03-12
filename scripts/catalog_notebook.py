@@ -348,7 +348,7 @@ def _(chart_data, math, mo, tag_name):
                 "sims = [sxs.load(sxs_id) for sxs_id in [\"" + "\", \"".join(chart_data.index) + "\"]]"
                 if len(chart_data) < max_width else
                 (
-                    "sims = [sxs.load(sim) for sim in [\n    \""
+                    "sims = [sxs.load(sxs_id) for sxs_id in [\n    \""
                     + "\",\n    \"".join(
                         "\", \"".join(chart_data.index[i:min(i+max_width, len(chart_data.index))])
                         for i in range(0, math.ceil(len(chart_data.index)/max_width)*max_width, max_width)
