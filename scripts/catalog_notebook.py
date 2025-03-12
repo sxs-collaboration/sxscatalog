@@ -24,7 +24,7 @@ app = marimo.App(
 )
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
     import marimo as mo
 
@@ -359,7 +359,7 @@ def _(chart_data, math, mo, tag_name):
         )
     )
     final_table = (
-        mo.ui.table(chart_data.drop("SXS ID", axis=1), page_size=20)
+        mo.ui.table(chart_data.drop("SXS ID", axis=1), page_size=20, show_download=False)
         if len(chart_data) > 0
         else mo.md("Select a region in the plot above to see details here")
     )
