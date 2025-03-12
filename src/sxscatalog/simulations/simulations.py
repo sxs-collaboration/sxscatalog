@@ -42,6 +42,11 @@ class SimulationsDataFrame(pd.DataFrame):
         
         The criterion used here is that the sum of the x-y components
         of the spins is less than 1e-3 at the reference time.
+        Returns
+        -------
+        Simulations
+            An instance of the Simulations class containing the loaded data.
+
         """
         return type(self)(self[
             (self["reference_chi1_perp"] + self["reference_chi2_perp"]) < 1e-3
@@ -235,8 +240,12 @@ class Simulations(collections.OrderedDict):
     def load(
         cls,
         download=None, *,
-        tag="", local=False, annex_dir=None, output_file=None,
-        compute_md5=False, show_progress=False
+        tag="",
+        local=False,
+        annex_dir=None,
+        output_file=None,
+        compute_md5=False,
+        show_progress=False
     ):
         """Load the catalog of SXS simulations
 
@@ -291,6 +300,9 @@ class Simulations(collections.OrderedDict):
         : Avoid caching the result of this function
 
         """
+        if hasattr(cls, "_simulations"):
+            return cls._simulations
+
         import json
         import zipfile
         import warnings
@@ -300,12 +312,9 @@ class Simulations(collections.OrderedDict):
         if tag and (local or annex_dir is not None):
             raise ValueError("Cannot specify a `tag` with `local` or `annex_dir`")
 
-        if hasattr(cls, "_simulations"):
-            return cls._simulations
-
         if local or annex_dir is not None:
             cls._simulations = cls.local(
-                annex_dir,
+                directory=annex_dir,
                 download=download,
                 output_file=output_file,
                 compute_md5=compute_md5,
@@ -314,6 +323,9 @@ class Simulations(collections.OrderedDict):
             return cls._simulations
 
         progress = read_config("download_progress", True)
+
+        if download is None:
+            download = True
 
         if not tag:
             if download is not False:
@@ -337,7 +349,7 @@ class Simulations(collections.OrderedDict):
                     warnings.warn(warning)
                 else:
                     raise ValueError(f"No simulations files found in the cache and {download=} was passed")
-            return cls.load(download=download, tag=tag, show_progress=show_progress)
+            return cls.load(download=download, tag=tag, local=local, annex_dir=annex_dir, output_file=output_file, compute_md5=compute_md5, show_progress=show_progress)
 
         # Normalize the tag to "v" followed by a normalized Version
         tag = f"v{Version(tag)}"
@@ -423,7 +435,10 @@ class Simulations(collections.OrderedDict):
         Simulations.load : Caching version of this function
 
         """
-        cls.load.cache_clear()
+        try:
+            cls.load.cache_clear()
+        except AttributeError:
+            pass
         return cls.load(download=download)
 
     @property
