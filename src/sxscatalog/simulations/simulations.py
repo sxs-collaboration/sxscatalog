@@ -356,7 +356,6 @@ class Simulations(collections.OrderedDict):
 
         cache_path = sxs_directory("cache") / f"simulations_{tag}.bz2"
 
-        download_failed = False
         if not cache_path.exists():
             if download is False:  # Test if it literally *is* False, rather than just casts to False
                 raise ValueError(f"Simulations not found in '{cache_path}' and downloading was turned off")
@@ -369,27 +368,23 @@ class Simulations(collections.OrderedDict):
                 temp_json = cache_path.with_suffix(".temp.json")
                 temp_zip = cache_path.with_suffix(".temp.bz2")
                 try:
-                    try:
-                        download_file(cls.url.format(tag=tag), temp_json, progress=progress, if_newer=False)
-                    except Exception as e:
-                        raise RuntimeError(
-                            f"\nFailed to download '{cls.url.format(tag=tag)}'."
-                            f"\nMaybe {tag=} does not exist?"
-                        ) from e
-                    else:
-                        if temp_json.exists():
-                            with zipfile.ZipFile(temp_zip, "w", compression=zipfile.ZIP_BZIP2) as simulations_zip:
-                                simulations_zip.write(temp_json, arcname="simulations.json")
-                            temp_zip.replace(cache_path)
+                    download_file(cls.url.format(tag=tag), temp_json, progress=progress, if_newer=False)
+                except Exception as e:
+                    raise RuntimeError(
+                        f"\nFailed to download '{cls.url.format(tag=tag)}'."
+                        f"\nMaybe {tag=} does not exist?"
+                    ) from e
+                else:
+                    if temp_json.exists():
+                        with zipfile.ZipFile(temp_zip, "w", compression=zipfile.ZIP_BZIP2) as simulations_zip:
+                            simulations_zip.write(temp_json, arcname="simulations.json")
+                        temp_zip.replace(cache_path)
                 finally:
                     temp_json.unlink(missing_ok=True)
                     temp_zip.unlink(missing_ok=True)
 
         if not cache_path.exists():
-            if download_failed:
-                raise ValueError(f"Simulations not found in '{cache_path}' and download failed") from download_failed
-            else:
-                raise ValueError(f"Simulations not found in '{cache_path}' for unknown reasons")
+            raise ValueError(f"Simulations not found in '{cache_path}' for unknown reasons")
 
         try:
             with zipfile.ZipFile(cache_path, "r") as simulations_zip:
