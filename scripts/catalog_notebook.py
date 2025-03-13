@@ -15,7 +15,7 @@
 
 import marimo
 
-__generated_with = "0.11.17"
+__generated_with = "0.11.19"
 app = marimo.App(
     width="full",
     app_title="SXS Catalog",
@@ -327,7 +327,10 @@ def _(chart, mo):
     chart_data = chart.value if len(chart.value) > 0 else chart.data
 
     (
-        mo.md("The following data can be further restricted by selecting a point or region on the plot; otherwise all data in the plot will be used.")
+        mo.md(
+            "The following data can be further restricted by selecting a point or "
+            "region on the plot; otherwise all data in the plot will be used."
+        )
         if len(chart.value) == 0 else
         None
     )
