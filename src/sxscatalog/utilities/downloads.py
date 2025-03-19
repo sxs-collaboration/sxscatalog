@@ -95,6 +95,29 @@ def download_file(url, path, progress=False, if_newer=True):
                     shutil.copyfileobj(r_raw, f)
             else:
                 shutil.copyfileobj(r.raw, f)
+
+        # Check if the output file is a text file;
+        # if so check if the first four characters are "http";
+        # if so check if the file is just a single line;
+        # if so check if that whole line is just a URL;
+        # if so print("Nope")
+        try:
+            with output_path.open("rb") as f:
+                first_four = f.read(4).decode("utf-8")
+                if first_four == "http":
+                    first_line = first_four + f.readline().decode("utf-8")
+                    second_line = f.readline().decode("utf-8")
+                    if not second_line:
+                        parsed_first_line = urllib.parse.urlparse(first_line)
+                        if parsed_first_line.scheme and parsed_first_line.netloc:
+                            return download_file(
+                                first_line,
+                                path,
+                                progress=progress,
+                                if_newer=if_newer,
+                            )
+        except:
+            pass
     except Exception as e:
         raise RuntimeError(f"Failed to download {url} to {local_filename}; original file remains") from e
     else:
