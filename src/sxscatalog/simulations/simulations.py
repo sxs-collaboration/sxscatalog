@@ -136,8 +136,8 @@ class Simulations(collections.OrderedDict):
     calls to `sxs.load` will automatically use this local copy
     of the simulations.
     """
-    releases_url = "https://api.github.com/repos/moble/sxscatalogdata/releases"
-    url = "https://raw.githubusercontent.com/moble/sxscatalogdata/{tag}/simulations.json"
+    releases_url = "https://api.github.com/repos/sxs-collaboration/sxscatalogdata/releases"
+    url = "https://raw.githubusercontent.com/sxs-collaboration/sxscatalogdata/{tag}/simulations.json"
 
     def __init__(self, sims):
         """Initialize the Simulations dictionary
