@@ -202,7 +202,7 @@ class Simulations(collections.OrderedDict):
         """
         import json
         from .local import write_local_simulations
-        from .. import sxs_directory
+        from ..utilities import sxs_directory
 
         if directory is not None:
             local_path = output_file
@@ -312,7 +312,7 @@ class Simulations(collections.OrderedDict):
         if tag and (local or annex_dir is not None):
             raise ValueError("Cannot specify a `tag` with `local` or `annex_dir`")
 
-        if local or annex_dir is not None:
+        if local or (annex_dir is not None):
             cls._simulations = cls.local(
                 directory=annex_dir,
                 download=download,
