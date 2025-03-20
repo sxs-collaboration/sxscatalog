@@ -245,7 +245,8 @@ class Simulations(collections.OrderedDict):
         annex_dir=None,
         output_file=None,
         compute_md5=False,
-        show_progress=False
+        show_progress=False,
+        ignore_cached=False,
     ):
         """Load the catalog of SXS simulations
 
@@ -300,7 +301,7 @@ class Simulations(collections.OrderedDict):
         : Avoid caching the result of this function
 
         """
-        if hasattr(cls, "_simulations"):
+        if hasattr(cls, "_simulations") and not ignore_cached:
             return cls._simulations
 
         import json
