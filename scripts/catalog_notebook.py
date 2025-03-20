@@ -260,10 +260,12 @@ def _(df, mo):
     )
     marker_size = mo.ui.dropdown(
         options=df.columns.to_list(),
+        value="reference_chi1_perp",
         label="Marker size",
     )
     marker_color = mo.ui.dropdown(
         options=df.columns.to_list(),
+        value="reference_chi2_perp",
         label="Marker color",
     )
 
