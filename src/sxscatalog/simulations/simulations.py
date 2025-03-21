@@ -332,6 +332,7 @@ class Simulations(collections.OrderedDict):
             if download is not False:
                 latest_release = cls.get_latest_release()
                 tag = latest_release["tag_name"]
+                published_at = latest_release["published_at"]
                 print(
                     f"Loading SXS simulations using latest tag '{tag}', "
                     f"published at {latest_release['published_at']}."
@@ -350,6 +351,7 @@ class Simulations(collections.OrderedDict):
                     warnings.warn(warning)
                 else:
                     raise ValueError(f"No simulations files found in the cache and {download=} was passed")
+                published_at = False
             return cls.load(download=download, tag=tag, local=local, annex_dir=annex_dir, output_file=output_file, compute_md5=compute_md5, show_progress=show_progress)
 
         # Normalize the tag to "v" followed by a normalized Version
@@ -402,6 +404,9 @@ class Simulations(collections.OrderedDict):
 
         sims = cls(simulations)
         sims.__file__ = str(cache_path)
+        sims.tag = tag
+        if published_at:
+            sims.published_at = published_at
 
         cls._simulations = sims
         return sims
