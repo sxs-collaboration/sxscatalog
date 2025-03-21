@@ -328,6 +328,7 @@ class Simulations(collections.OrderedDict):
         if download is None:
             download = True
 
+        published_at = False
         if not tag:
             if download is not False:
                 latest_release = cls.get_latest_release()
@@ -351,7 +352,6 @@ class Simulations(collections.OrderedDict):
                     warnings.warn(warning)
                 else:
                     raise ValueError(f"No simulations files found in the cache and {download=} was passed")
-                published_at = False
             return cls.load(download=download, tag=tag, local=local, annex_dir=annex_dir, output_file=output_file, compute_md5=compute_md5, show_progress=show_progress)
 
         # Normalize the tag to "v" followed by a normalized Version
