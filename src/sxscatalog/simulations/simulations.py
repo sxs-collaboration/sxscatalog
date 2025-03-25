@@ -410,7 +410,8 @@ class Simulations(collections.OrderedDict):
         if published_at:
             sims.published_at = published_at
 
-        cls._simulations = sims
+        if not ignore_cached:
+            cls._simulations = sims
         return sims
 
     @classmethod
