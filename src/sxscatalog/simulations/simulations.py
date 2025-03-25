@@ -294,11 +294,14 @@ class Simulations(collections.OrderedDict):
         show_progress : bool, optional
             If `annex_dir` is not None, this will be passed to
             `sxs.simulations.local_simulations`.
+        ignore_cached : bool, optional
+            If True, this function will ignore the cached version of
+            the simulations attached to this class, and reload the
+            simulations as if the cache did not exist.
 
         See Also
         --------
         sxs.sxs_directory : Locate cache directory Simulations.reload
-        : Avoid caching the result of this function
 
         """
         if hasattr(cls, "_simulations") and not ignore_cached:
