@@ -564,6 +564,13 @@ class Simulations(collections.OrderedDict):
             simulations["date_postprocessing"].map(datetime_from_string),
         ), axis=1))
 
+        # If `tag` or `published_at` are present, add them as attributes
+        if hasattr(self, "tag"):
+            sims_df.tag = self.tag
+        if hasattr(self, "published_at"):
+            sims_df.published_at = self.published_at
+
+        # Add a column to indicate whether this simulation is deprecated
         sims_df.insert(0, "deprecated", (
             sims_df["keywords"].map(lambda ks: "deprecated" in ks)
         ))
