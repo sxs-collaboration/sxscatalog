@@ -437,10 +437,15 @@ class Simulations(collections.OrderedDict):
 
     @property
     def dataframe(self):
-        """Create pandas.DataFrame containing metadata for all
-        simulations
+        """Create pandas.DataFrame with metadata for all simulations
 
-        Note that `pandas` is the standard Python interface for
+        NOTE: You might prefer to load this object directly with
+        `sxs.load("dataframe")` instead of using this method.  The
+        benefit to that is that `load` accepts all the same options as
+        `Simulations.load`, so you can load a specific tag, local
+        simulations, etc.
+
+        The `pandas` package is the standard Python interface for
         heterogeneous data tables, like the one we have here.  This
         interface allows for more convenient slicing and querying of
         data than the list of `dict`s provided by the `Simulations`
