@@ -40,6 +40,12 @@ Source = "https://github.com/Mike Boyle/sxscatalog"
 [tool.hatch.version]
 path = "src/sxscatalog/__about__.py"
 
+[tool.hatch.envs.default]
+dependencies = [
+  "ipython",
+  "sxs"
+]
+
 [tool.hatch.envs.types]
 extra-dependencies = [
   "mypy>=1.0.0",
