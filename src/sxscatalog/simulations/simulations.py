@@ -415,35 +415,25 @@ class Simulations(collections.OrderedDict):
         return sims
 
     @classmethod
-    def reload(cls, download=True):
+    def reload(cls, *args, **kwargs):
         """Reload the catalog of SXS simulations, without caching
 
-        Clears the cache of `Simulations.load` and returns the result of calling it again.
-        Note that in this function, the default value of `download` is `True`, rather
-        than `None` as in `Simulations.load` — though both behaviors are available.
+        Clears the cache created by a previous call to
+        `Simulations.load` and returns the result of calling it again.
 
-        Parameters
-        ----------
-        download : {None, bool}, optional
-            If False, this function will look for the simulations in the sxs cache and
-            raise an error if it is not found.  If True (the default), this function
-            will download the simulations and raise an error if the download fails.  If
-            None (the default), it will try to download the file, warn but fall back to
-            the cache if that fails, and only raise an error if the simulations is not
-            found in the cache.  Note that this ignores the sxs configuration file
-            entirely.
+        All arguments are passed on to `load`.  See also the
+        `ignore_cached` argument of `load`.  This does basically the
+        same thing, except that it re-establishes the cache with
+        whatever is reloaded.
 
         See Also
         --------
-        sxs.sxs_directory : Locate cache directory
         Simulations.load : Caching version of this function
 
         """
-        try:
-            cls.load.cache_clear()
-        except AttributeError:
-            pass
-        return cls.load(download=download)
+        if hasattr(cls, "_simulations"):
+            delattr(cls, "_simulations")
+        return cls.load(*args, **kwargs)
 
     @property
     def dataframe(self):
