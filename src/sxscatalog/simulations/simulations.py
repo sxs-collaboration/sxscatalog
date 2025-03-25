@@ -336,11 +336,11 @@ class Simulations(collections.OrderedDict):
                 published_at = latest_release["published_at"]
                 print(
                     f"Loading SXS simulations using latest tag '{tag}', "
-                    f"published at {latest_release['published_at']}."
+                    f"published at {published_at}."
                 )
             else:
                 tags = [
-                    Version(f.stem.split("_")[-1])
+                    Version(f.stem.split("_")[-1]) # Chops off the "v" prefix so `max` works
                     for f in sxs_directory("cache").glob("simulations_*.bz2")
                 ]
                 if tags:
@@ -352,7 +352,6 @@ class Simulations(collections.OrderedDict):
                     warnings.warn(warning)
                 else:
                     raise ValueError(f"No simulations files found in the cache and {download=} was passed")
-            return cls.load(download=download, tag=tag, local=local, annex_dir=annex_dir, output_file=output_file, compute_md5=compute_md5, show_progress=show_progress)
 
         # Normalize the tag to "v" followed by a normalized Version
         tag = f"v{Version(tag)}"
