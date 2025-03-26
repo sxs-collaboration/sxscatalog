@@ -247,7 +247,7 @@ class Simulations(collections.OrderedDict):
         compute_md5=False,
         show_progress=False,
         ignore_cached=False,
-    ):
+    ):  # Make sure to pass through any parameters from `load`
         """Load the catalog of SXS simulations
 
         Note that — unlike most SXS data files — the simulations file

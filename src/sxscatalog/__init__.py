@@ -20,7 +20,8 @@ def load(location, download=None, **kwargs):
             annex_dir=kwargs.get("annex_dir", None),
             output_file=kwargs.get("output_file", None),
             compute_md5=kwargs.get("compute_md5", False),
-            show_progress=kwargs.get("show_progress", False)
+            show_progress=kwargs.get("show_progress", False),
+            ignore_cached=kwargs.get("ignore_cached", False),
         )
 
     elif location == "dataframe":
