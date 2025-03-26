@@ -164,7 +164,16 @@ class Simulations(collections.OrderedDict):
         return latest_release
 
     @classmethod
-    def local(cls, directory=None, *, download=None, output_file=None, compute_md5=False, show_progress=False):
+    def local(
+        cls,
+        directory=None,
+        *,
+        download=None,
+        output_file=None,
+        compute_md5=False,
+        show_progress=False,
+        ignore_cached=False,
+    ):
         """Load the local catalog of SXS simulations
         
         This function loads the standard public catalog, but also
@@ -192,6 +201,10 @@ class Simulations(collections.OrderedDict):
         show_progress : bool, optional
             If `directory` is not None, this will be passed to
             `sxs.local_simulations`.
+        ignore_cached : bool, optional
+            If True, this function will ignore the cached version of
+            the `Simulations` object attached to this class, and
+            reload the simulations as if the cache did not exist.
 
         See Also
         --------
@@ -224,7 +237,12 @@ class Simulations(collections.OrderedDict):
                     )
             with local_path.open("r") as f:
                 local_simulations = json.load(f)
-        simulations = cls.load(download)
+        simulations = cls.load(
+            download,
+            show_progress=show_progress,
+            ignore_cached=ignore_cached
+        )
+
         doi_versions = {
             k: v["DOI_versions"]
             for k,v in simulations.items()
@@ -247,7 +265,7 @@ class Simulations(collections.OrderedDict):
         compute_md5=False,
         show_progress=False,
         ignore_cached=False,
-    ):  # Make sure to pass through any parameters from `load`
+    ):  # Make sure to pass through any parameters from `load` and to `local`
         """Load the catalog of SXS simulations
 
         Note that — unlike most SXS data files — the simulations file
@@ -317,14 +335,20 @@ class Simulations(collections.OrderedDict):
             raise ValueError("Cannot specify a `tag` with `local` or `annex_dir`")
 
         if local or (annex_dir is not None):
-            cls._simulations = cls.local(
+            simulations = cls.local(
                 directory=annex_dir,
                 download=download,
                 output_file=output_file,
                 compute_md5=compute_md5,
-                show_progress=show_progress
+                show_progress=show_progress,
+                ignore_cached=ignore_cached,
             )
-            return cls._simulations
+            if not ignore_cached:
+                cls._simulations = simulations
+                return cls._simulations
+            else:
+                return simulations
+                
 
         progress = read_config("download_progress", True)
 
