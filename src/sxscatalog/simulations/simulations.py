@@ -512,21 +512,29 @@ class Simulations(collections.OrderedDict):
             if col not in simulations.columns:
                 simulations[col] = np.nan
 
+        def three_vector_dataframe(df, col):
+            """Convert a column of vectors to components, magnitude, and original"""
+            vectors = df.get(col, np.nan*np.ones((len(df),3))).tolist()
+            df_vec = pd.DataFrame(
+                vectors,
+                columns=[f"{col}_{i}" for i in ["x", "y", "z"]]
+            )
+            df_vec[f"{col}_mag"] = df_vec.apply(norm, axis=1)
+            df_vec[col] = vectors
+            return df_vec
+        
         sims_df = SimulationsDataFrame(pd.concat((
-            simulations["reference_time"].map(floater),
             simulations["reference_mass_ratio"].map(floater),
-            simulations["reference_dimensionless_spin1"].map(three_vec),
-            simulations["reference_dimensionless_spin1"].map(norm).rename("reference_dimensionless_spin1_mag"),
-            simulations["reference_dimensionless_spin2"].map(three_vec),
-            simulations["reference_dimensionless_spin2"].map(norm).rename("reference_dimensionless_spin2_mag"),
             simulations["reference_chi_eff"].map(floater),
             simulations["reference_chi1_perp"].map(floater),
             simulations["reference_chi2_perp"].map(floater),
             simulations["reference_eccentricity"].map(floater),
             simulations["reference_eccentricity"].map(floaterbound).rename("reference_eccentricity_bound"),
+            simulations["reference_time"].map(floater),
+            three_vector_dataframe(simulations, "reference_dimensionless_spin1"),
+            three_vector_dataframe(simulations, "reference_dimensionless_spin2"),
             simulations["reference_mean_anomaly"].map(floater),
-            simulations["reference_orbital_frequency"].map(three_vec),
-            simulations["reference_orbital_frequency"].map(norm).rename("reference_orbital_frequency_mag"),
+            three_vector_dataframe(simulations, "reference_orbital_frequency"),
             (
                 simulations["reference_position1"].map(three_vec)
                 -simulations["reference_position2"].map(three_vec)
@@ -541,10 +549,8 @@ class Simulations(collections.OrderedDict):
             #simulations["merger_time"].map(floater),
             simulations["common_horizon_time"].map(floater),
             simulations["remnant_mass"].map(floater),
-            simulations["remnant_dimensionless_spin"].map(three_vec),
-            simulations["remnant_dimensionless_spin"].map(norm).rename("remnant_dimensionless_spin_mag"),
-            simulations["remnant_velocity"].map(three_vec),
-            simulations["remnant_velocity"].map(norm).rename("remnant_velocity_mag"),
+            three_vector_dataframe(simulations, "remnant_dimensionless_spin"),
+            three_vector_dataframe(simulations, "remnant_velocity"),
             #simulations["final_time"].map(floater),
             simulations["EOS"].fillna(simulations["eos"]),
             simulations["disk_mass"].map(floater),
@@ -555,17 +561,13 @@ class Simulations(collections.OrderedDict):
             simulations["initial_orbital_frequency"].map(floater),
             simulations["initial_adot"].map(floater),
             simulations["initial_ADM_energy"].map(floater),
-            simulations["initial_ADM_linear_momentum"].map(three_vec),
-            simulations["initial_ADM_linear_momentum"].map(norm).rename("initial_ADM_linear_momentum_mag"),
-            simulations["initial_ADM_angular_momentum"].map(three_vec),
-            simulations["initial_ADM_angular_momentum"].map(norm).rename("initial_ADM_angular_momentum_mag"),
+            three_vector_dataframe(simulations, "initial_ADM_linear_momentum"),
+            three_vector_dataframe(simulations, "initial_ADM_angular_momentum"),
             simulations["initial_mass1"].map(floater),
             simulations["initial_mass2"].map(floater),
             simulations["initial_mass_ratio"].map(floater),
-            simulations["initial_dimensionless_spin1"].map(three_vec),
-            simulations["initial_dimensionless_spin1"].map(norm).rename("initial_dimensionless_spin1_mag"),
-            simulations["initial_dimensionless_spin2"].map(three_vec),
-            simulations["initial_dimensionless_spin2"].map(norm).rename("initial_dimensionless_spin2_mag"),
+            three_vector_dataframe(simulations, "initial_dimensionless_spin1"),
+            three_vector_dataframe(simulations, "initial_dimensionless_spin2"),
             simulations["initial_position1"].map(three_vec),
             simulations["initial_position2"].map(three_vec),
             #simulations["object1"].astype("category"),
