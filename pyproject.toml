@@ -72,6 +72,9 @@ dependencies = [
 # Run these as `hatch run tests:test`
 test = "pytest {args:tests}"
 
+[tool.pytest.ini_options]
+addopts = "--verbose --durations=0"
+
 [tool.coverage.run]
 source_pkgs = ["sxscatalog", "tests"]
 branch = true
