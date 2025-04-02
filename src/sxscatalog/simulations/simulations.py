@@ -512,81 +512,116 @@ class Simulations(collections.OrderedDict):
             if col not in simulations.columns:
                 simulations[col] = np.nan
 
+        def valid_vector(value):
+            # Check if the value is a list or array of length 3
+            if isinstance(value, (list, np.ndarray)) and len(value) == 3:
+                return value
+            # Replace invalid entries with [nan, nan, nan]
+            return [np.nan, np.nan, np.nan]
+
         def three_vector_dataframe(df, col):
             """Convert a column of vectors to components, magnitude, and original"""
-            vectors = df.get(col, np.nan*np.ones((len(df),3))).tolist()
+            vectors = df.get(
+                col, np.nan*np.ones((len(df),3))
+            ).apply(valid_vector).tolist()
             df_vec = pd.DataFrame(
                 vectors,
-                columns=[f"{col}_{i}" for i in ["x", "y", "z"]]
+                columns=[f"{col}_{i}" for i in ["x", "y", "z"]],
+                index=df.index  # Inherit the index from df
             )
             df_vec[f"{col}_mag"] = df_vec.apply(norm, axis=1)
             df_vec[col] = vectors
             return df_vec
         
+        def get(df, col, mapper, new_name=None):
+            new_name = new_name or col
+            default_values = {
+                floater: np.nan,
+                floaterbound: np.nan,
+                three_vec: np.array([np.nan, np.nan, np.nan]),
+                norm: np.nan,
+                datetime_from_string: pd.NaT,
+            }
+            try:
+                default_value = default_values[mapper]
+                use_mapper = True
+            except:
+                default_value = mapper
+                use_mapper = False
+            default_series = pd.Series(
+                [default_value] * len(df),
+                index=df.index,
+                name=col
+            )
+            gotten = df.get(col, default_series)
+            if use_mapper:
+                gotten = gotten.map(mapper)
+            return gotten.rename(new_name)
+
         sims_df = SimulationsDataFrame(pd.concat((
-            simulations["reference_mass_ratio"].map(floater),
-            simulations["reference_chi_eff"].map(floater),
-            simulations["reference_chi1_perp"].map(floater),
-            simulations["reference_chi2_perp"].map(floater),
-            simulations["reference_eccentricity"].map(floater),
-            simulations["reference_eccentricity"].map(floaterbound).rename("reference_eccentricity_bound"),
-            simulations["reference_time"].map(floater),
+            get(simulations, "reference_mass_ratio", floater),
+            get(simulations, "reference_chi_eff", floater),
+            get(simulations, "reference_chi1_perp", floater),
+            get(simulations, "reference_chi2_perp", floater),
+            get(simulations, "reference_eccentricity", floater),
+            get(simulations, "reference_eccentricity", floaterbound, new_name="reference_eccentricity_bound"),
+            get(simulations, "reference_time", floater),
             three_vector_dataframe(simulations, "reference_dimensionless_spin1"),
             three_vector_dataframe(simulations, "reference_dimensionless_spin2"),
-            simulations["reference_mean_anomaly"].map(floater),
+            get(simulations, "reference_mean_anomaly", floater),
             three_vector_dataframe(simulations, "reference_orbital_frequency"),
             (
-                simulations["reference_position1"].map(three_vec)
-                -simulations["reference_position2"].map(three_vec)
+                get(simulations, "reference_position1", three_vec)
+                - get(simulations, "reference_position2", three_vec)
             ).map(norm).rename("reference_separation"),
-            simulations["reference_position1"].map(three_vec),
-            simulations["reference_position2"].map(three_vec),
-            simulations["reference_mass1"].map(floater),
-            simulations["reference_mass2"].map(floater),
-            simulations["reference_dimensionless_spin1"].map(norm).rename("reference_chi1_mag"),
-            simulations["reference_dimensionless_spin2"].map(norm).rename("reference_chi2_mag"),
-            simulations["relaxation_time"].map(floater),
-            #simulations["merger_time"].map(floater),
-            simulations["common_horizon_time"].map(floater),
-            simulations["remnant_mass"].map(floater),
+            get(simulations, "reference_position1", three_vec),
+            get(simulations, "reference_position2", three_vec),
+            get(simulations, "reference_mass1", floater),
+            get(simulations, "reference_mass2", floater),
+            get(simulations, "reference_dimensionless_spin1", norm, new_name="reference_chi1_mag"),
+            get(simulations, "reference_dimensionless_spin2", norm, new_name="reference_chi2_mag"),
+            get(simulations, "relaxation_time", floater),
+            # get(simulations, "merger_time", floater),
+            get(simulations, "common_horizon_time", floater),
+            get(simulations, "remnant_mass", floater),
             three_vector_dataframe(simulations, "remnant_dimensionless_spin"),
             three_vector_dataframe(simulations, "remnant_velocity"),
-            #simulations["final_time"].map(floater),
-            simulations["EOS"].fillna(simulations["eos"]),
-            simulations["disk_mass"].map(floater),
-            simulations["ejecta_mass"].map(floater),
-            simulations["object_types"].astype("category"),
-            simulations["initial_data_type"].astype("category"),
-            simulations["initial_separation"].map(floater),
-            simulations["initial_orbital_frequency"].map(floater),
-            simulations["initial_adot"].map(floater),
-            simulations["initial_ADM_energy"].map(floater),
+            # get(simulations, "final_time", floater),
+            get(simulations, "EOS", np.nan).fillna(get(simulations, "eos", np.nan)),
+            get(simulations, "disk_mass", floater),
+            get(simulations, "ejecta_mass", floater),
+            get(simulations, "object_types", "").astype("category"),
+            get(simulations, "initial_data_type", "").astype("category"),
+            get(simulations, "initial_separation", floater),
+            get(simulations, "initial_orbital_frequency", floater),
+            get(simulations, "initial_adot", floater),
+            get(simulations, "initial_ADM_energy", floater),
             three_vector_dataframe(simulations, "initial_ADM_linear_momentum"),
             three_vector_dataframe(simulations, "initial_ADM_angular_momentum"),
-            simulations["initial_mass1"].map(floater),
-            simulations["initial_mass2"].map(floater),
-            simulations["initial_mass_ratio"].map(floater),
+            get(simulations, "initial_mass1", floater),
+            get(simulations, "initial_mass2", floater),
+            get(simulations, "initial_mass_ratio", floater),
             three_vector_dataframe(simulations, "initial_dimensionless_spin1"),
             three_vector_dataframe(simulations, "initial_dimensionless_spin2"),
-            simulations["initial_position1"].map(three_vec),
-            simulations["initial_position2"].map(three_vec),
-            #simulations["object1"].astype("category"),
-            #simulations["object2"].astype("category"),
-            # simulations["url"],
-            #simulations["simulation_name"],
-            #simulations["alternative_names"],
-            # simulations["metadata_path"],
-            # simulations["end_of_trajectory_time"].map(floater),
-            # simulations["merger_time"].map(floater),
-            simulations["number_of_orbits"].map(floater),
-            simulations["number_of_orbits_from_start"].map(floater),
-            simulations["number_of_orbits_from_reference_time"].map(floater),
-            simulations["DOI_versions"],
-            simulations["keywords"],
-            simulations["date_link_earliest"].map(datetime_from_string),
-            simulations["date_run_earliest"].map(datetime_from_string),
-            simulations["date_run_latest"].map(datetime_from_string),
-            simulations["date_postprocessing"].map(datetime_from_string),
+            get(simulations, "initial_position1", three_vec),
+            get(simulations, "initial_position2", three_vec),
+            # get(simulations, "object1", "").astype("category"),
+            # get(simulations, "object2", "").astype("category"),
+            # get(simulations, "url", ""),
+            # get(simulations, "simulation_name", ""),
+            # get(simulations, "alternative_names", []),
+            # get(simulations, "metadata_path", ""),
+            # get(simulations, "end_of_trajectory_time", floater),
+            # get(simulations, "merger_time", floater),
+            get(simulations, "number_of_orbits", floater),
+            get(simulations, "number_of_orbits_from_start", floater),
+            get(simulations, "number_of_orbits_from_reference_time", floater),
+            get(simulations, "DOI_versions", []),
+            get(simulations, "keywords", []),
+            get(simulations, "date_link_earliest", datetime_from_string),
+            get(simulations, "date_run_earliest", datetime_from_string),
+            get(simulations, "date_run_latest", datetime_from_string),
+            get(simulations, "date_postprocessing", datetime_from_string),
         ), axis=1))
 
         # If `tag` or `published_at` are present, add them as attributes
