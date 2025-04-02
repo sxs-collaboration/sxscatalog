@@ -33,9 +33,9 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/Mike Boyle/sxscatalog#readme"
-Issues = "https://github.com/Mike Boyle/sxscatalog/issues"
-Source = "https://github.com/Mike Boyle/sxscatalog"
+Documentation = "https://github.com/sxs-collaboration/sxscatalog#readme"
+Issues = "https://github.com/sxs-collaboration/sxscatalog/issues"
+Source = "https://github.com/sxs-collaboration/sxscatalog"
 
 [tool.hatch.version]
 path = "src/sxscatalog/__about__.py"
