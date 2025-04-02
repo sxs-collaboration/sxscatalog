@@ -116,7 +116,7 @@ jobs:
           fi
 
       - name: Commit version bump
-        if: ${{ steps.release_check.outputs.run_release == 'true' }}
+        if: ${{ steps.release_check.outputs.run_release == 'true' && github.ref == 'refs/heads/main' }}
         run: |
           # Note that we need to set read and write permissions under
           # "Settings" > "Actions" > "General" > "Workflow permissions"
@@ -129,7 +129,7 @@ jobs:
           git push --follow-tags  # Will not trigger new workflow because it uses GITHUB_TOKEN
 
       - name: Create GitHub Release
-        if: ${{ steps.release_check.outputs.run_release == 'true' }}
+        if: ${{ steps.release_check.outputs.run_release == 'true' && github.ref == 'refs/heads/main' }}
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -140,7 +140,7 @@ jobs:
           prerelease: ${{ env.prerelease }}
 
       - name: Publish to PyPI
-        if: ${{ steps.release_check.outputs.run_release == 'true' }}
+        if: ${{ steps.release_check.outputs.run_release == 'true' && github.ref == 'refs/heads/main' }}
         env:
           # 1) Get key from https://pypi.org/manage/account/token/
           # 2) Copy it to Github > repo > Settings > Secrets > Actions > New repository secret
@@ -152,14 +152,14 @@ jobs:
           hatch publish
   
       - name: Upload Pages Artifact
-        if: ${{ steps.release_check.outputs.run_release == 'true' }}
+        if: ${{ steps.release_check.outputs.run_release == 'true' && github.ref == 'refs/heads/main' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: scripts/catalog_notebook_output
 
       - name: Deploy to GitHub Pages
         # Be sure to allow this under Settings > Pages > Build and deployment > Source > Github Actions
-        if: ${{ steps.release_check.outputs.run_release == 'true' }}
+        if: ${{ steps.release_check.outputs.run_release == 'true' && github.ref == 'refs/heads/main' }}
         id: deployment
         uses: actions/deploy-pages@v4
         with:
