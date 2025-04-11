@@ -8,11 +8,12 @@ class MetadataMetric:
     two collections of metadata (`sxs.Metadata`, `dict`, `pd.Series`)
     and returns a number measuring the distance between the metadata.
     
-    With the default arguments, this will not strictly be a metric, as
-    it does not satisfy the triangle inequality.  However, it is
-    intended to be used as a heuristic for sorting and filtering
-    metadata, rather than as a strict metric for clustering or
-    classification.
+    This is intended to be used as a heuristic for sorting and
+    filtering metadata, rather than as a strict metric for clustering
+    or classification.  In particular, note that this does not account
+    for the fact that parameters are typically measured at the
+    reference time, which can be quite different for different
+    systems.
 
     Note that calling an object of this class with two metadata
     collections will return the *squared* distance between them.
@@ -21,14 +22,16 @@ class MetadataMetric:
     ----------
     parameters : list of str, optional
         The names of the metadata fields to be compared.  The defaults
-        are the reference quantities for mass ratio, spin,
-        eccentricity, and mean anomaly.  Note that all of these fields
-        *must* be present in *both* metadata collections.  (The
-        `Metadata.add_standard_parameters` method may be useful here.)
+        are the mass ratio, spins, and eccentricity at the reference
+        time.  Note that all of these fields *must* be present in
+        *both* metadata collections — except for
+        `reference_mass_ratio` or `reference_complex_eccentricity`
+        which will be calculated from other parameters if not present.
+        (The `Metadata.add_standard_parameters` method may be useful
+        here.)
     metric : array_like, optional
         The matrix used to weight the differences in the parameters.
-        The default is a diagonal matrix with ones on the diagonal,
-        except for the mean-anomaly entry, which is 1/pi^2.
+        The default is a diagonal matrix with ones on the diagonal.
     allow_different_object_types : bool, optional
         If True, metadata with different object types (BHBH, BHNS,
         NSNS) will be compared without penalty.  If False, metadata
@@ -46,31 +49,26 @@ class MetadataMetric:
         is intended to avoid ascribing small distances to systems with
         shorter inspirals.  Default is 20.
 
-    The mean anomaly, if present, is treated specially to account for
-    the fact that a mean anomaly of 0 is equivalent to a mean anomaly
-    of 2π.  The difference between the entries in the two metadata
-    collections is "unwrapped" before the metric is applied.
-
-    If the eccentricity of metadata1 is below
-    `eccentricity_threshold1`, then the mean anomaly is ignored.  If
-    that is true and the eccentricity of metadata2 is below
-    `eccentricity_threshold2` *and* the number of orbits in metadata2
-    is longer than `eccentricity_threshold_penalize_shorter`, then the
-    eccentricity is also ignored.  You may set these arguments to 0 to
-    disable these features.
+    The eccentricity is ignored if eccentricity is one of the
+    parameters to be compared and all three of the following are true:
+      1) the eccentricity in metadata1 is below
+         `eccentricity_threshold1`,
+      2) the eccentricity in metadata2 is below
+         `eccentricity_threshold2`, and
+      3) the number of orbits in metadata2 is longer than
+         `eccentricity_threshold_penalize_shorter`.
+    You may set these arguments to 0 to disable these features.
 
     """
     def __init__(
             self,
             parameters=[
-                "reference_mass1",
-                "reference_mass2",
+                "reference_mass_ratio",
                 "reference_dimensionless_spin1",
                 "reference_dimensionless_spin2",
-                "reference_eccentricity",
-                "reference_mean_anomaly",
+                "reference_complex_eccentricity",
             ],
-            metric=np.diag([1, 1, 1, 1, 1, 1, 1, 1, 1, 1/np.pi**2]),
+            metric=None,
             allow_different_object_types=False,
             eccentricity_threshold1=1e-2,
             eccentricity_threshold2=1e-3,
@@ -103,37 +101,51 @@ class MetadataMetric:
             )
             if type1 != type2:
                 return np.inf
+        
+        # Create empty lists because the element type will vary;
+        # each element could be `float`, `complex`, or `list`.
+        values1 = [np.nan] * len(self.parameters)
+        values2 = [np.nan] * len(self.parameters)
 
-        values1 = [metadata1[parameter] for parameter in self.parameters]
-        values2 = [metadata2[parameter] for parameter in self.parameters]
+        # Fill in the values with the metadata
+        for values, metadata in [(values1, metadata1), (values2, metadata2)]:
+            for i, parameter in enumerate(self.parameters):
+                if parameter in metadata:
+                    values[i] = metadata[parameter]
+                elif parameter == "reference_mass_ratio":
+                    values[i] = (
+                        floater(metadata.get("reference_mass1", np.nan))
+                        / floater(metadata.get("reference_mass2", np.nan))
+                    )
+                elif parameter == "reference_complex_eccentricity":
+                    e = floaterbound(
+                        metadata.get(
+                            "reference_eccentricity_bound",
+                             metadata.get("reference_eccentricity", np.nan)
+                        )
+                    )
+                    l = floater(metadata.get("reference_mean_anomaly", np.nan))
+                    values[i] = e * np.exp(1j * l)
 
         if debug:
             print(f"{self.parameters=}")
             print(f"{values1=}")
             print(f"{values2=}")
 
-        if "reference_mean_anomaly" in self.parameters:
-            i = self.parameters.index("reference_mean_anomaly")
-            values1[i], values2[i] = np.unwrap([floater(values1[i]), floater(values2[i])])
+        if "reference_eccentricity" in self.parameters or "reference_complex_eccentricity" in self.parameters:
+            i = (
+                self.parameters.index("reference_eccentricity")
+                if "reference_eccentricity" in self.parameters
+                else self.parameters.index("reference_complex_eccentricity")
+            )
 
-        if "reference_eccentricity" in self.parameters:
-            # Either way, we first try to make sure that the corresponding entries are floats.
-            i = self.parameters.index("reference_eccentricity")
-            values1[i] = metadata1.get("reference_eccentricity_bound", floaterbound(values1[i]))
-            values2[i] = metadata2.get("reference_eccentricity_bound", floaterbound(values2[i]))
-
-            if values1[i] < self.eccentricity_threshold1:
+            if abs(values1[i]) < self.eccentricity_threshold1:
                 # Then we consider metadata1 a non-eccentric system...
-
-                # ...so we ignore the mean anomaly entirely...
-                if "reference_mean_anomaly" in self.parameters:
-                    i_ma = self.parameters.index("reference_mean_anomaly")
-                    values1[i_ma] = values2[i_ma]
 
                 # ...and we ignore the eccentricity if metadata2 is also non-eccentric,
                 # and longer than eccentricity_threshold_penalize_shorter.
                 if (
-                    values2[i] < self.eccentricity_threshold2
+                    abs(values2[i]) < self.eccentricity_threshold2
                     and metadata2.get(
                         "number_of_orbits",
                         metadata2.get("number_of_orbits_from_start", 0)
@@ -141,6 +153,8 @@ class MetadataMetric:
                 ):
                     values1[i] = values2[i]
 
+        # Concatenate the values into a single 1-d array (even if some
+        # entries are 3-vectors).
         difference = (
             np.concatenate(list(map(np.atleast_1d, values1)))
             - np.concatenate(list(map(np.atleast_1d, values2)))
@@ -149,4 +163,6 @@ class MetadataMetric:
         if debug:
             print(f"{difference=}")
 
-        return difference @ self.metric @ difference
+        metric = self.metric or np.diag(np.ones(len(difference)))
+
+        return np.real(difference @ metric @ difference.conj())
