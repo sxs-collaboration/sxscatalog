@@ -29,7 +29,8 @@ def read_config(key=None, default=None):
     import json
     config_path = sxs_directory("config") / "config.json"
     if config_path.exists():
-        config = json.load(config_path.open("r"))
+        with config_path.open("r") as f:
+            config = json.load(f)
     else:
         config = {}
     if key is None:
@@ -62,7 +63,8 @@ def write_config(**kwargs):
     import json
     config_path = sxs_directory("config") / "config.json"
     if config_path.exists():
-        config = json.load(config_path.open("r"))
+        with config_path.open("r") as f:
+            config = json.load(f)
     else:
         config = {}
     config.update(**kwargs)
