@@ -15,7 +15,7 @@
 
 import marimo
 
-__generated_with = "0.11.19"
+__generated_with = "0.13.8"
 app = marimo.App(
     width="full",
     app_title="SXS Catalog",
