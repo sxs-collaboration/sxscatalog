@@ -8,7 +8,7 @@
 #     "pandas==2.2.3",
 #     "pyarrow==19.0.1",
 #     "requests==2.32.3",
-#     "sxscatalog==3.0.14",
+#     "sxscatalog==3.0.15",
 #     "traitlets==5.14.3",
 # ]
 # ///
