@@ -68,40 +68,6 @@ def _(pd):
     tag_name = latest_release["tag_name"]
     release_published = pd.to_datetime(latest_release["published_at"]).strftime("%B %d, %Y")
 
-    return current_time, release_published, sxscatalog, tag_name
-
-
-@app.cell
-def _():
-    # # This cell preloads the simulation catalog data as a workaround for a failure in Chrome.
-    # # This would not normally be needed in a regular Python environment.
-
-    # import pyodide
-
-    # url = sxscatalog.simulations.Simulations.url.format(tag=tag_name)
-    # req = pyodide.http.open_url(url)
-
-    # d2 = req.read()
-
-    # D2 = json.loads(d2)
-
-
-    # cls.url.format(tag=tag_name)
-
-
-    # sims = cls(simulations)
-    # sims.__file__ = str(cache_path)
-    # sims.tag = tag
-    # if published_at:
-    #     sims.published_at = published_at
-
-    # if not ignore_cached:
-    #     cls._simulations = sims
-    return
-
-
-@app.cell
-def _(sxscatalog, tag_name):
     # Note that we load the dataframe as `df0`, so that we can filter it below as `df`
     df0 = sxscatalog.load("dataframe", tag=tag_name)
 
@@ -109,7 +75,7 @@ def _(sxscatalog, tag_name):
     # which subclasses — but is not a — pd.DataFrame, so marimo fanciness doesn't work if the dataframe
     # is just output raw.  We can get the fancy display either by calling mo.ui.dataframe(df) or by
     # acting on df with some function that returns a regular pd.DataFrame.
-    return (df0,)
+    return current_time, df0, release_published, tag_name
 
 
 @app.cell(hide_code=True)
