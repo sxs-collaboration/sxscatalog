@@ -2,12 +2,13 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #     "altair==5.5.0",
-#     "anywidget==0.9.15",
+#     "anywidget==0.9.18",
 #     "marimo",
-#     "numpy==2.1.3",
-#     "pandas==2.2.3",
-#     "pyarrow==19.0.1",
-#     "requests==2.32.3",
+#     "numpy==2.3.1",
+#     "pandas==2.3.1",
+#     "pyarrow==20.0.0",
+#     "pyodide-http==0.2.2",
+#     "requests==2.32.4",
 #     "sxscatalog==3.0.15",
 #     "traitlets==5.14.3",
 # ]
@@ -15,7 +16,7 @@
 
 import marimo
 
-__generated_with = "0.13.8"
+__generated_with = "0.14.11"
 app = marimo.App(
     width="full",
     app_title="SXS Catalog",
@@ -42,7 +43,11 @@ def _():
     import json
     import pandas as pd
     import altair as alt
-    return alt, json, math, np, pd, pyarrow, warnings
+    import pyodide_http
+
+    # This patches `requests` to work in the browser, so that we can load the SXS catalog data
+    pyodide_http.patch_all()
+    return alt, math, pd
 
 
 @app.cell(hide_code=True)
@@ -63,6 +68,40 @@ def _(pd):
     tag_name = latest_release["tag_name"]
     release_published = pd.to_datetime(latest_release["published_at"]).strftime("%B %d, %Y")
 
+    return current_time, release_published, sxscatalog, tag_name
+
+
+@app.cell
+def _():
+    # # This cell preloads the simulation catalog data as a workaround for a failure in Chrome.
+    # # This would not normally be needed in a regular Python environment.
+
+    # import pyodide
+
+    # url = sxscatalog.simulations.Simulations.url.format(tag=tag_name)
+    # req = pyodide.http.open_url(url)
+
+    # d2 = req.read()
+
+    # D2 = json.loads(d2)
+
+
+    # cls.url.format(tag=tag_name)
+
+
+    # sims = cls(simulations)
+    # sims.__file__ = str(cache_path)
+    # sims.tag = tag
+    # if published_at:
+    #     sims.published_at = published_at
+
+    # if not ignore_cached:
+    #     cls._simulations = sims
+    return
+
+
+@app.cell
+def _(sxscatalog, tag_name):
     # Note that we load the dataframe as `df0`, so that we can filter it below as `df`
     df0 = sxscatalog.load("dataframe", tag=tag_name)
 
@@ -70,14 +109,7 @@ def _(pd):
     # which subclasses — but is not a — pd.DataFrame, so marimo fanciness doesn't work if the dataframe
     # is just output raw.  We can get the fancy display either by calling mo.ui.dataframe(df) or by
     # acting on df with some function that returns a regular pd.DataFrame.
-    return (
-        current_time,
-        df0,
-        latest_release,
-        release_published,
-        sxscatalog,
-        tag_name,
-    )
+    return (df0,)
 
 
 @app.cell(hide_code=True)
@@ -106,9 +138,9 @@ def _(current_time, mo, release_published, tag_name):
 def _(mo):
     mo.md(
         rf"""
-        ---
-        The dataframe has several useful [attributes](https://sxs.readthedocs.io/en/main/api/simulations/#simulationsdataframe-class) that allow selecting important subsets of the data.  Use the buttons below to select those subsets.
-        """
+    ---
+    The dataframe has several useful [attributes](https://sxs.readthedocs.io/en/main/api/simulations/#simulationsdataframe-class) that allow selecting important subsets of the data.  Use the buttons below to select those subsets.
+    """
     )
     return
 
@@ -148,7 +180,7 @@ def _(mo):
         deprecation,
     ])
     df_attributes
-    return deprecation, df_attributes, eccentricity, precession, system_type
+    return deprecation, eccentricity, precession, system_type
 
 
 @app.cell(hide_code=True)
@@ -195,7 +227,7 @@ def _(deprecation, df0, eccentricity, precession, system_type):
     df = df[columns]
 
     df["SXS ID"] = list(df.index)
-    return columns, df, preferred_columns
+    return df, preferred_columns
 
 
 @app.cell(hide_code=True)
@@ -320,7 +352,7 @@ def _(
         label="SXS Simulations"
     )
     chart
-    return chart, df_restricted, kwargs, used_selectors
+    return (chart,)
 
 
 @app.cell(hide_code=True)
@@ -374,7 +406,7 @@ def _(chart_data, math, mo, tag_name):
         mo.md(f"```python\n{load_code}\n```\n\n").style({"max-height": "300px", "overflow": "auto"}),
         mo.md(f"The metadata summary table for that selection follows:\n{final_table}"),
     ])
-    return final_table, load_code, max_width, these_simulations
+    return
 
 
 if __name__ == "__main__":
