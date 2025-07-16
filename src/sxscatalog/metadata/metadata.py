@@ -485,7 +485,7 @@ class Metadata(collections.OrderedDict):
             except Exception:
                 if raise_on_errors:
                     raise
-        return self
+        return _backwards_compatibility(self)
 
     def add_extras(self, raise_on_errors=False):
         """Add information to the metadata from other files in its directory"""

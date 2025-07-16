@@ -1,6 +1,6 @@
 from pathlib import Path
 from datetime import datetime, timezone
-from ..utilities import sxs_directory, sxs_identifier_re, path_to_invenio
+from ..utilities import sxs_directory, sxs_identifier_re, path_to_invenio, lev_number
 from ..metadata import Metadata
 
 def file_upload_allowed(file, directory_listing):
@@ -139,11 +139,12 @@ def local_simulations(annex_dir, compute_md5=False, show_progress=False):
                 key = extract_id_from_common_metadata(dirpath / "common-metadata.txt", annex_dir)
 
                 # Find the highest Lev directory and extract the metadata
-                highest_lev = sorted(
-                    [d for d in dirnames if d.startswith("Lev")]
-                )[-1]
+                levs = sorted(d for d in dirnames if d.startswith("Lev"))
+                highest_lev = levs[-1]
                 metadata = Metadata.load(dirpath / highest_lev / "metadata")
                 metadata = metadata.add_standard_parameters()
+
+                metadata["lev_numbers"] = [lev_number(lev) for lev in levs]
 
                 metadata["directory"] = str(dirpath.relative_to(annex_dir))
 

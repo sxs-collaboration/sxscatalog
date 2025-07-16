@@ -8,14 +8,14 @@
 #     "pandas==2.2.3",
 #     "pyarrow==19.0.1",
 #     "requests==2.32.3",
-#     "sxscatalog==3.0.7",
+#     "sxscatalog==3.0.15",
 #     "traitlets==5.14.3",
 # ]
 # ///
 
 import marimo
 
-__generated_with = "0.11.19"
+__generated_with = "0.13.8"
 app = marimo.App(
     width="full",
     app_title="SXS Catalog",

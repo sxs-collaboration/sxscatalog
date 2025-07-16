@@ -348,7 +348,6 @@ class Simulations(collections.OrderedDict):
                 return cls._simulations
             else:
                 return simulations
-                
 
         progress = read_config("download_progress", True)
 

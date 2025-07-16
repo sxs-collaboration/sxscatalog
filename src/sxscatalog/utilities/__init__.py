@@ -11,7 +11,9 @@ from .sxs_identifiers import (
     sxs_id, sxs_id_and_version,
     lev_number, simulation_title, sxs_id_to_url,
 )
-
+from .files import (
+    md5checksum, lock_file_manager, find_simulation_directories, find_files
+)
 
 def path_to_invenio(file_path):
     """Convert a file path to an invenio-compatible name"""
