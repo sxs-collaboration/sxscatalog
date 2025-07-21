@@ -3,6 +3,7 @@
 import collections
 import numpy as np
 import pandas as pd
+import requests
 
 from ..utilities.string_converters import *
 
@@ -156,8 +157,13 @@ class Simulations(collections.OrderedDict):
     @classmethod
     def get_latest_release(cls):
         """Retrieve the most-recently published release of the catalog from github"""
+        import os
         import requests
-        releases_response = requests.get(cls.releases_url)
+        session = requests.Session()
+        if cls.releases_url.startswith("https://api.github.com/"):
+            if (token := os.getenv("GITHUB_TOKEN")):
+                session.headers.update({"Authorization": f"token {token}"})
+        releases_response = session.get(cls.releases_url)
         releases_response.raise_for_status()
         releases_data = releases_response.json()
         latest_release = max(releases_data, key=lambda r: r["published_at"])

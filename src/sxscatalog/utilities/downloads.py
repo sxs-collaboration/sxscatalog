@@ -41,7 +41,9 @@ def download_file(url, path, progress=False, if_newer=True):
     import requests
     from tqdm.auto import tqdm
     from datetime import datetime, timezone
+    session = requests.Session()
 
+    # Figure out where to save the file
     url_path = urllib.parse.urlparse(url).path
     path = pathlib.Path(path).expanduser().resolve()
     if path.is_dir():
@@ -53,7 +55,14 @@ def download_file(url, path, progress=False, if_newer=True):
         raise ValueError(f"Path parent '{directory}' is not writable or is not a directory")
     local_filename = directory / filename
 
-    r = requests.get(url, stream=True, allow_redirects=True)
+    # Check if we are accessing github and have a token available;
+    # if so, add it to the request headers to avoid rate limiting
+    if url.startswith("https://api.github.com/") or url.startswith("https://raw.githubusercontent.com/"):
+        token = os.getenv("GITHUB_TOKEN")
+        if token:
+            session.headers.update({"Authorization": f"token {token}"})
+
+    r = session.get(url, stream=True, allow_redirects=True)
     if r.status_code != 200:
         print(f"An error occurred when trying to access <{url}>.")
         try:
