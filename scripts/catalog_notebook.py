@@ -192,7 +192,7 @@ def _(deprecation, df0, eccentricity, precession, system_type):
     columns = preferred_columns + [c for c in df.columns if c not in preferred_columns]
     df = df[columns]
 
-    df["SXS ID"] = list(df.index)
+    df.reset_index(names="SXS ID", inplace=True)
     return df, preferred_columns
 
 
@@ -342,19 +342,20 @@ def _(chart_data, math, mo, tag_name):
     # Show the code needed to load these simulations
     max_width = 6  # How many SXS IDs to allow on one line
     these_simulations =  ("this simulation" if len(chart_data)==1 else f"these {len(chart_data):,} simulations")
+    chart_SXS_ID = chart_data["SXS ID"]
     load_code = (
         f"""import sxs\ndf = sxs.load("dataframe", tag="{tag_name}")\n"""
         + (
-            f"""sim = sxs.load("{chart_data.index[0]}")"""
+            f"""sim = sxs.load("{chart_SXS_ID[0]}")"""
             if len(chart_data)==1 else
             (
-                "sims = [sxs.load(sxs_id) for sxs_id in [\"" + "\", \"".join(chart_data.index) + "\"]]"
+                "sims = [sxs.load(sxs_id) for sxs_id in [\"" + "\", \"".join(chart_SXS_ID) + "\"]]"
                 if len(chart_data) < max_width else
                 (
                     "sims = [sxs.load(sxs_id) for sxs_id in [\n    \""
                     + "\",\n    \"".join(
-                        "\", \"".join(chart_data.index[i:min(i+max_width, len(chart_data.index))])
-                        for i in range(0, math.ceil(len(chart_data.index)/max_width)*max_width, max_width)
+                        "\", \"".join(chart_SXS_ID[i:min(i+max_width, len(chart_SXS_ID))])
+                        for i in range(0, math.ceil(len(chart_SXS_ID)/max_width)*max_width, max_width)
                     )
                     + "\"\n]]"
                 )
