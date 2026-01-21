@@ -160,6 +160,7 @@ class Simulations(collections.OrderedDict):
         import os
         import requests
         session = requests.Session()
+        session.headers.update({"User-Agent": "curl/8.18.0"})
         if cls.releases_url.startswith("https://api.github.com/"):
             if (token := os.getenv("GITHUB_TOKEN")):
                 session.headers.update({"Authorization": f"token {token}"})

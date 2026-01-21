@@ -41,7 +41,9 @@ def download_file(url, path, progress=False, if_newer=True):
     import requests
     from tqdm.auto import tqdm
     from datetime import datetime, timezone
+
     session = requests.Session()
+    session.headers.update({"User-Agent": "curl/8.18.0"})
 
     # Figure out where to save the file
     url_path = urllib.parse.urlparse(url).path
