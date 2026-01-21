@@ -9,7 +9,7 @@
 #     "pyarrow==20.0.0",
 #     "pyodide-http==0.2.2",
 #     "requests==2.32.4",
-#     "sxscatalog==3.0.17",
+#     "sxscatalog==3.0.18",
 #     "traitlets==5.14.3",
 # ]
 # ///
