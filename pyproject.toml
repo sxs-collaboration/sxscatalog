@@ -37,6 +37,11 @@ Documentation = "https://github.com/sxs-collaboration/sxscatalog#readme"
 Issues = "https://github.com/sxs-collaboration/sxscatalog/issues"
 Source = "https://github.com/sxs-collaboration/sxscatalog"
 
+[project.optional-dependencies]
+scrape-RIT = [
+  "bs4"
+]
+
 [tool.hatch.version]
 path = "src/sxscatalog/__about__.py"
 
