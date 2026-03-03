@@ -26,3 +26,32 @@ def invenio_to_path(file_name):
     import os
     from pathlib import Path
     return Path(file_name.replace(":", os.path.sep))
+
+def consolidate_xyz_vectors(data):
+    """Find instances of key triples <key>x, <key>y, <key>z and consolidate into
+    vectors named <key>.  If <key> ends with a dash (-) or underscore (_), the
+    trailing dash/underscore will be stripped. The argument to this function is
+    modified and returned.
+
+    """
+
+    names = []
+
+    for k in data:
+        if k[-1] == 'z':
+            base = k[:-1]
+            if (((base + 'x') in data) and
+                ((base + 'y') in data)):
+                names.append(base)
+
+    for name in names:
+        vec = [data.pop(name + 'x'),
+               data.pop(name + 'y'),
+               data.pop(name + 'z')]
+
+        if name[-1] in ['-', '_']:
+            name = name[:-1]
+
+        data[name] = vec
+
+    return data
