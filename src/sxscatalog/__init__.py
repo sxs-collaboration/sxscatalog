@@ -10,7 +10,11 @@ from . import simulations
 
 
 def load(location, download=None, **kwargs):
-    from .simulations import Simulations
+    from .simulations import (
+        Simulations,
+        RITSimulations,
+        MAYASimulations,
+    )
 
     if location == "simulations":
         return Simulations.load(
@@ -26,6 +30,26 @@ def load(location, download=None, **kwargs):
 
     elif location == "dataframe":
         return load("simulations", download=download, **kwargs).dataframe
+
+    elif location == "RITsimulations":
+        return RITSimulations.load(
+            download=download,
+            tag=kwargs.get("tag", ""),
+            ignore_cached=kwargs.get("ignore_cached", False),
+        )
+
+    elif location == "RITdataframe":
+        return load("RITsimulations", download=download, **kwargs).dataframe
+
+    elif location == "MAYAsimulations":
+        return MAYASimulations.load(
+            download=download,
+            tag=kwargs.get("tag", ""),
+            ignore_cached=kwargs.get("ignore_cached", False),
+        )
+
+    elif location == "MAYAdataframe":
+        return load("MAYAsimulations", download=download, **kwargs).dataframe
 
     else:
         raise ValueError(
