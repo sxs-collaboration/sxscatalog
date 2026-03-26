@@ -107,6 +107,54 @@ class SimulationsDataFrame(pd.DataFrame):
         """Restrict dataframe to just simulations that are not deprecated"""
         return type(self)(self[~self["deprecated"]])
 
+# A few helper functions for the Simulations class below
+def valid_vector(value):
+    # Check if the value is a list or array of length 3
+    if isinstance(value, (list, np.ndarray)) and len(value) == 3:
+        return value
+    # Replace invalid entries with [nan, nan, nan]
+    return [np.nan, np.nan, np.nan]
+
+def three_vector_dataframe(df, col):
+    """Convert a column of vectors to components, magnitude, and original"""
+    vectors = df.get(
+        col, np.nan*np.ones((len(df),3))
+    ).apply(valid_vector).tolist()
+    df_vec = pd.DataFrame(
+        vectors,
+        columns=[f"{col}_{i}" for i in ["x", "y", "z"]],
+        index=df.index  # Inherit the index from df
+    )
+    df_vec[f"{col}_mag"] = df_vec.apply(norm, axis=1)
+    df_vec[col] = vectors
+    return df_vec
+
+def get(df, col, mapper, new_name=None):
+    new_name = new_name or col
+    default_values = {
+        floater: np.nan,
+        floaterbound: np.nan,
+        three_vec: np.array([np.nan, np.nan, np.nan]),
+        norm: np.nan,
+        datetime_from_string: pd.NaT,
+        ensure_list: [],
+        str_join_or_None: None,
+    }
+    try:
+        default_value = default_values[mapper]
+        use_mapper = True
+    except:
+        default_value = mapper
+        use_mapper = False
+    default_series = pd.Series(
+        [default_value] * len(df),
+        index=df.index,
+        name=col
+    )
+    gotten = df.get(col, default_series)
+    if use_mapper:
+        gotten = gotten.map(mapper)
+    return gotten.rename(new_name)
 
 class Simulations(collections.OrderedDict):
     """Interface to the catalog of SXS simulations
@@ -517,54 +565,6 @@ class Simulations(collections.OrderedDict):
         ]:
             if col not in simulations.columns:
                 simulations[col] = np.nan
-
-        def valid_vector(value):
-            # Check if the value is a list or array of length 3
-            if isinstance(value, (list, np.ndarray)) and len(value) == 3:
-                return value
-            # Replace invalid entries with [nan, nan, nan]
-            return [np.nan, np.nan, np.nan]
-
-        def three_vector_dataframe(df, col):
-            """Convert a column of vectors to components, magnitude, and original"""
-            vectors = df.get(
-                col, np.nan*np.ones((len(df),3))
-            ).apply(valid_vector).tolist()
-            df_vec = pd.DataFrame(
-                vectors,
-                columns=[f"{col}_{i}" for i in ["x", "y", "z"]],
-                index=df.index  # Inherit the index from df
-            )
-            df_vec[f"{col}_mag"] = df_vec.apply(norm, axis=1)
-            df_vec[col] = vectors
-            return df_vec
-        
-        def get(df, col, mapper, new_name=None):
-            new_name = new_name or col
-            default_values = {
-                floater: np.nan,
-                floaterbound: np.nan,
-                three_vec: np.array([np.nan, np.nan, np.nan]),
-                norm: np.nan,
-                datetime_from_string: pd.NaT,
-                ensure_list: [],
-                str_join_or_None: None,
-            }
-            try:
-                default_value = default_values[mapper]
-                use_mapper = True
-            except:
-                default_value = mapper
-                use_mapper = False
-            default_series = pd.Series(
-                [default_value] * len(df),
-                index=df.index,
-                name=col
-            )
-            gotten = df.get(col, default_series)
-            if use_mapper:
-                gotten = gotten.map(mapper)
-            return gotten.rename(new_name)
 
         sims_df = SimulationsDataFrame(pd.concat((
             get(simulations, "reference_mass_ratio", floater),
