@@ -96,7 +96,6 @@ def fetch_RIT_catalog_data():
             # _backwards_compatibility() adds number_of_orbits=NaN, which we
             # don't want. Throw away both of these keys.
             RITcatalogdata[sim_id].pop("metadata_path", None)
-            RITcatalogdata[sim_id].pop("number_of_orbits", None)
 
         RITcatalogdata[sim_id]["extrap_psi4_url"] = RITcatalog_url + psi_link["href"]
         RITcatalogdata[sim_id]["extrap_strain_url"] = (
