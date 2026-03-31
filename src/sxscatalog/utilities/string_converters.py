@@ -48,3 +48,17 @@ def datetime_from_string(x):
     except:
         pass  # No timezone information present; assuming UTC
     return dt.tz_localize(None)
+
+def ensure_list(x):
+    """Make sure that this field is a list, rather than (say) a single string."""
+
+    return x if isinstance(x, list) else [x]
+
+def str_join_or_None(x):
+    """Join an array of strings into a string; or failing that, None"""
+
+    try:
+        s = "".join(x)
+    except:
+        s = None
+    return s

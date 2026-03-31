@@ -547,6 +547,8 @@ class Simulations(collections.OrderedDict):
                 three_vec: np.array([np.nan, np.nan, np.nan]),
                 norm: np.nan,
                 datetime_from_string: pd.NaT,
+                ensure_list: [],
+                str_join_or_None: None,
             }
             try:
                 default_value = default_values[mapper]
@@ -593,7 +595,7 @@ class Simulations(collections.OrderedDict):
             three_vector_dataframe(simulations, "remnant_dimensionless_spin"),
             three_vector_dataframe(simulations, "remnant_velocity"),
             # get(simulations, "final_time", floater),
-            get(simulations, "EOS", np.nan).fillna(get(simulations, "eos", np.nan)),
+            get(simulations, "EOS", str_join_or_None).fillna(get(simulations, "eos", str_join_or_None)),
             get(simulations, "disk_mass", floater),
             get(simulations, "ejecta_mass", floater),
             get(simulations, "object_types", "").astype("category"),
@@ -623,7 +625,7 @@ class Simulations(collections.OrderedDict):
             get(simulations, "number_of_orbits_from_start", floater),
             get(simulations, "number_of_orbits_from_reference_time", floater),
             get(simulations, "DOI_versions", []),
-            get(simulations, "keywords", []),
+            get(simulations, "keywords", ensure_list),
             get(simulations, "date_link_earliest", datetime_from_string),
             get(simulations, "date_run_earliest", datetime_from_string),
             get(simulations, "date_run_latest", datetime_from_string),
