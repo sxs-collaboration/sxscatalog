@@ -20,21 +20,29 @@ env:
   FORCE_COLOR: "1"
 
 jobs:
-  test-and-release:
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    permissions:
-      pages: write
-      id-token: write
-      contents: write
+  test_and_release_check:
     # Provide an output so the next job knows whether to release
     outputs:
-      RUN_RELEASE: ${{ steps.release_check.outputs.run_release }}
+      run_release: ${{ steps.release_check.outputs.run_release }}
+    runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v4
+
+      - name: Determine if release steps should run
+        id: release_check
+        run: |
+          # Default to skipping release steps
+          echo "run_release=false" >> $GITHUB_OUTPUT
+
+          # If the ref is main, check the commit message for [skip release]
+          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            COMMIT_MSG="$(git log -1 --pretty=%B)"
+            if [[ "$COMMIT_MSG" != *"[skip release]"* ]]; then
+              echo "run_release=true" >> $GITHUB_OUTPUT
+              echo "run_release=true"
+            fi
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -50,6 +58,46 @@ jobs:
       - name: Check marimo
         if: "!contains(github.event.head_commit.message, '[skip marimo check]')"
         run: hatch run marimo:check
+
+  check_pypi_token:
+    runs-on: ubuntu-latest
+    outputs:
+      has_pypi_token: ${{ steps.check.outputs.defined }}
+    steps:
+      - id: check
+        shell: bash
+        env:
+          HATCH_INDEX_AUTH: ${{ secrets.PYPI_TOKEN }}
+        # A secret is treated as an empty string if it does not exist
+        run: |
+          if [ "$HATCH_INDEX_AUTH" != "" ]; then
+            echo "defined=true" >> $GITHUB_OUTPUT
+          else
+            echo "defined=false" >> $GITHUB_OUTPUT
+          fi
+
+  release:
+    needs: [test_and_release_check, check_pypi_token] # Only run if all tests pass
+    if: ${{ needs.test_and_release_check.outputs.run_release == 'true' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+      contents: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: pip install --upgrade pip hatch
 
       - name: Export notebook
         run: hatch run marimo:convert
@@ -100,23 +148,8 @@ jobs:
         run: |
           sed -i "s/sxscatalog==.*\"/sxscatalog==${{ env.new_version }}\"/" scripts/catalog_notebook.py
 
-      - name: Determine if release steps should run
-        id: release_check
-        run: |
-          # Default to skipping release steps
-          echo "run_release=false" >> $GITHUB_OUTPUT
-
-          # If the ref is main, check the commit message for [skip release]
-          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-            COMMIT_MSG="$(git log -1 --pretty=%B)"
-            if [[ "$COMMIT_MSG" != *"[skip release]"* ]]; then
-              echo "run_release=true" >> $GITHUB_OUTPUT
-              echo "run_release=true"
-            fi
-          fi
-
       - name: Commit version bump
-        if: ${{ steps.release_check.outputs.run_release == 'true' && github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           # Note that we need to set read and write permissions under
           # "Settings" > "Actions" > "General" > "Workflow permissions"
@@ -129,7 +162,7 @@ jobs:
           git push --follow-tags  # Will not trigger new workflow because it uses GITHUB_TOKEN
 
       - name: Create GitHub Release
-        if: ${{ steps.release_check.outputs.run_release == 'true' && github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -140,7 +173,8 @@ jobs:
           prerelease: ${{ env.prerelease }}
 
       - name: Publish to PyPI
-        if: ${{ steps.release_check.outputs.run_release == 'true' && github.ref == 'refs/heads/main' }}
+        if: ${{ needs.check_pypi_token.outputs.has_pypi_token == 'true'
+                && github.ref == 'refs/heads/main' }}
         env:
           # 1) Get key from https://pypi.org/manage/account/token/
           # 2) Copy it to Github > repo > Settings > Secrets > Actions > New repository secret
@@ -152,14 +186,14 @@ jobs:
           hatch publish
   
       - name: Upload Pages Artifact
-        if: ${{ steps.release_check.outputs.run_release == 'true' && github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: scripts/catalog_notebook_output
 
       - name: Deploy to GitHub Pages
         # Be sure to allow this under Settings > Pages > Build and deployment > Source > Github Actions
-        if: ${{ steps.release_check.outputs.run_release == 'true' && github.ref == 'refs/heads/main' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         id: deployment
         uses: actions/deploy-pages@v4
         with:
