@@ -3,7 +3,6 @@
 import collections
 import numpy as np
 import pandas as pd
-import requests
 
 from ..utilities.string_converters import *
 
@@ -19,7 +18,7 @@ def promote_z_3vec(x):
     try:
         v = np.array([0., 0., float(x)])
     except:
-        v = np.nan
+        v = np.full(3, np.nan)
     return v
 
 class RITSimulations(Simulations):
@@ -234,7 +233,7 @@ class RITSimulations(Simulations):
 
         This can also be a more convenient way to access the metadata
         because the raw metadata has missing keys and mixed formats.
-        Iif a key is missing from the metadata for a particular key,
+        If a key is missing from the metadata for a particular key,
         the dataframe will just have a `NaN` in that entry, rather
         than raising an exception.  Other keys may have unexpected
         entries — such as the `"reference_eccentricity"` field, which
@@ -558,7 +557,7 @@ class MAYASimulations(Simulations):
 
         This can also be a more convenient way to access the metadata
         because the raw metadata has missing keys and mixed formats.
-        Iif a key is missing from the metadata for a particular key,
+        If a key is missing from the metadata for a particular key,
         the dataframe will just have a `NaN` in that entry, rather
         than raising an exception.  Other keys may have unexpected
         entries — such as the `"reference_eccentricity"` field, which
