@@ -313,6 +313,7 @@ def _(
             strokeWidth=1,
             opacity=0.8,
         )
+        .properties(width="container")
         .encode(**kwargs),
         legend_selection=True,
         label="SXS Simulations"
