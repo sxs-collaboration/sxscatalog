@@ -10,3 +10,5 @@ intended to be used by other packages, such as
 exist separately for simple applications like [the web
 interface](https://sxs-collaboration.github.io/sxscatalog/); users will most
 likely never need this package directly.
+
+NOTE: The Marimo catalog (at data.black-holes.org) is now contained in that site's repo.
