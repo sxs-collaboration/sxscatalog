@@ -58,16 +58,6 @@ extra-dependencies = [
 [tool.hatch.envs.types.scripts]
 check = "mypy --install-types --non-interactive {args:src/sxscatalog tests}"
 
-[tool.hatch.envs.marimo]
-extra-dependencies = [
-  "marimo>=0.23.0,!=0.23.1",
-]
-[tool.hatch.envs.marimo.scripts]
-edit = "marimo edit --sandbox scripts/catalog_notebook.py"
-run = "marimo run --sandbox scripts/catalog_notebook.py"
-check = "uv run scripts/catalog_notebook.py"  # Just to see if the script runs successfully
-convert = "marimo export html-wasm scripts/catalog_notebook.py -o scripts/catalog_notebook_output --mode run"
-
 [tool.hatch.envs.tests]
 dependencies = [
   "pytest",
