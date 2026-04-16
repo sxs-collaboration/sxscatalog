@@ -632,6 +632,9 @@ class Simulations(collections.OrderedDict):
             get(simulations, "date_postprocessing", datetime_from_string),
         ), axis=1))
 
+        # Set the name of the index to something meaningful
+        sims_df.index.set_names("SXS ID", inplace=True)
+
         # If `tag` or `published_at` are present, add them as attributes
         if hasattr(self, "tag"):
             sims_df.tag = self.tag
