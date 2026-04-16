@@ -60,7 +60,7 @@ check = "mypy --install-types --non-interactive {args:src/sxscatalog tests}"
 
 [tool.hatch.envs.marimo]
 extra-dependencies = [
-  "marimo",
+  "marimo>=0.23.0,!=0.23.1",
 ]
 [tool.hatch.envs.marimo.scripts]
 edit = "marimo edit --sandbox scripts/catalog_notebook.py"
