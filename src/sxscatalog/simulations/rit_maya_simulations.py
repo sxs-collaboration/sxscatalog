@@ -21,6 +21,35 @@ def promote_z_3vec(x):
         v = np.full(3, np.nan)
     return v
 
+def _add_parameters_to_RIT(simulations_df):
+    """A helper function to add standard parameters that aren't included in the
+    default metadata fields. We add 'relaxed_chi1_perp', 'relaxed_chi2_perp',
+    and 'relaxed_chi_eff'.
+
+    Parameters
+    ----------
+    simulations_df : pandas.Series
+
+    Returns
+    -------
+    relaxed_chi1_perp, relaxed_chi2_perp, relaxed_chi_eff : tuple, float
+        A tuple of `relaxed_chi_perp`, `relaxed_chi2_perp` and `relaxed_chi_eff`.
+    """
+
+    m1 = simulations_df['relaxed_mass1']
+    m2 = simulations_df['relaxed_mass2']
+    chi1 = simulations_df['relaxed_chi1']
+    chi2 = simulations_df['relaxed_chi2']
+    L = simulations_df['relaxed_LNhat']
+
+    chi1L = np.dot(chi1, L)
+    chi2L = np.dot(chi2, L)
+    relaxed_chi1_perp = np.linalg.norm(np.cross(chi1, L))
+    relaxed_chi2_perp = np.linalg.norm(np.cross(chi2, L))
+    relaxed_chi_eff = (m1*chi1L + m2*chi2L) / (m1 + m2)
+
+    return relaxed_chi1_perp, relaxed_chi2_perp, relaxed_chi_eff
+
 class RITSimulations(Simulations):
     """Interface to the catalog of RIT simulations
 
@@ -267,6 +296,10 @@ class RITSimulations(Simulations):
                 simulations[col + "z"].map(promote_z_3vec)
             )
 
+        simulations[['relaxed_chi1_perp', 'relaxed_chi2_perp', 'relaxed_chi_eff']] = simulations.apply(
+            _add_parameters_to_RIT, axis=1, result_type='expand'
+            )
+
         sims_df = pd.DataFrame(pd.concat((
             get(simulations, "relaxed_mass_ratio_1_over_2", floater),
             get(simulations, "eccentricity", floater),
@@ -275,6 +308,9 @@ class RITSimulations(Simulations):
             three_vector_dataframe(simulations, "relaxed_chi2"),
             three_vector_dataframe(simulations, "relaxed_LNhat"),
             three_vector_dataframe(simulations, "relaxed_nhat"),
+            get(simulations, "relaxed_chi1_perp", floater),
+            get(simulations, "relaxed_chi2_perp", floater),
+            get(simulations, "relaxed_chi_eff", floater),
             get(simulations, "freq_start_22", floater),
             get(simulations, "freq_start_22_Hz_1Msun", floater),
             get(simulations, "relaxed_mass1", floater),
