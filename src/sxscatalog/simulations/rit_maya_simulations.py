@@ -149,7 +149,7 @@ class RITSimulations(Simulations):
         sxs.sxs_directory : Locate cache directory Simulations.reload
 
         """
-        if hasattr(cls, "_simulations") and not ignore_cached:
+        if "_simulations" in cls.__dict__ and not ignore_cached:
             return cls._simulations
 
         import json
@@ -480,7 +480,7 @@ class MAYASimulations(Simulations):
         sxs.sxs_directory : Locate cache directory Simulations.reload
 
         """
-        if hasattr(cls, "_simulations") and not ignore_cached:
+        if "_simulations" in cls.__dict__ and not ignore_cached:
             return cls._simulations
 
         import json
